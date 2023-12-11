@@ -113,7 +113,8 @@ where
         header: Header,
     ) -> Result<Self>
     where
-    'a: 'i, {
+        'a: 'i,
+    {
         reader.read_nested(header.length, |reader| {
             let mut result = Self::new();
 

@@ -20,27 +20,27 @@ pub struct NestedDecoder<'i, R> {
 }
 
 impl<'i, 'r, R: Reader<'r>> NestedDecoder<'i, R>
-where 'r: 'i {
+where
+    'r: 'i,
+{
     /// Create a new nested reader which can read the given [`Length`].
     pub(crate) fn new(inner: &'i mut R, len: Length) -> Result<Self> {
         Self::is_out_of_bounds(inner.readable(), len)?;
-        
+
         Ok(Self {
             end_pos: (inner.position() + len)?,
             inner,
         })
     }
 
-
     /// Returns readable range of current nest (not the underlaying reader)
     fn readable(&self) -> Range<Length> {
         self.inner.position()..self.end_pos
     }
 
-
     /// Move the position cursor by the given length, returning an error if there
     /// isn't enough remaining data in the nested input.
-    /// 
+    ///
     /// Returns: new end position
     fn check_out_of_bounds(&mut self, len: Length) -> Result<Length> {
         Self::is_out_of_bounds(self.readable(), len)
@@ -68,10 +68,6 @@ where 'r: 'i {
         }
     }
 
-    // fn peek_header(&self) -> Result<Header> {
-    //
-    // }
-
     pub fn position(&self) -> Length {
         self.inner.position()
     }
@@ -81,15 +77,9 @@ where 'r: 'i {
         self.inner.read_slice(len)
     }
 
-    // pub fn peek_slice(&mut self, len: Length) -> Result<&'r [u8]> {
-    //     self.check_out_of_bounds(len)?;
-    //     self.inner.peek_slice(len)
-    // }
-
     pub fn error(&mut self, kind: ErrorKind) -> Error {
         self.inner.error(kind)
     }
-
 
     pub fn read_into<'o>(&mut self, out: &'o mut [u8]) -> Result<&'o [u8]> {
         let len = Length::try_from(out.len())?;
@@ -174,15 +164,16 @@ where 'r: 'i {
         Ok(buf[0])
     }
 
-    // TODO: make only available for Clone
-    //
-    // impl<'i, 'r, R: Reader<'r> + Clone> NestedDecoder<'i, R> {
+    /// Reads header on a cloned reader, so it's position will not be changed
     pub fn peek_header(&self) -> Result<Header> {
         if self.is_finished() {
             Err(Error::incomplete(self.position()))
         } else {
             // TODO(tarcieri): handle peeking past nested length
-            Header::decode(&mut self.inner.clone().root_nest())
+            // probably done
+            let mut reader = self.inner.clone();
+            let mut decoder = NestedDecoder::new(&mut reader, self.end_pos)?;
+            Header::decode(&mut decoder)
         }
     }
 
@@ -191,5 +182,10 @@ where 'r: 'i {
         let header = self.peek_header()?;
         let header_len = header.encoded_len()?;
         self.read_slice((header_len + header.length)?)
+    }
+
+    /// Decode a value which impls the [`Decode`] trait.
+    pub fn decode<T: Decode<'r>>(&mut self) -> Result<T> {
+        T::decode(self).map_err(|e| e.nested(self.position()))
     }
 }

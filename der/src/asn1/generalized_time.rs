@@ -207,7 +207,8 @@ impl<'a> DecodeValue<'a> for SystemTime {
         header: Header,
     ) -> Result<Self>
     where
-    'a: 'i {
+        'a: 'i,
+    {
         Ok(GeneralizedTime::decode_value(reader, header)?.into())
     }
 }

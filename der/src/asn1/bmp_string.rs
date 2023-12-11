@@ -1,8 +1,8 @@
 //! ASN.1 `BMPString` support.
 
 use crate::{
-    BytesOwned, DecodeValue, EncodeValue, Error, FixedTag, Header, Length, Reader, Result, Tag,
-    Writer, NestedDecoder,
+    BytesOwned, DecodeValue, EncodeValue, Error, FixedTag, Header, Length, NestedDecoder, Reader,
+    Result, Tag, Writer,
 };
 use alloc::{boxed::Box, vec::Vec};
 use core::{fmt, str::FromStr};
@@ -90,9 +90,13 @@ impl AsRef<[u8]> for BmpString {
 }
 
 impl<'a> DecodeValue<'a> for BmpString {
-    fn decode_value<'i, R: Reader<'a>>(reader: &mut NestedDecoder<'i, R>, header: Header) -> Result<Self>
+    fn decode_value<'i, R: Reader<'a>>(
+        reader: &mut NestedDecoder<'i, R>,
+        header: Header,
+    ) -> Result<Self>
     where
-    'a: 'i {
+        'a: 'i,
+    {
         Self::from_ucs2(reader.read_vec(header.length)?)
     }
 }

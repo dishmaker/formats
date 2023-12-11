@@ -9,9 +9,7 @@ use core::ops::Range;
 
 pub(crate) use nested::NestedDecoder;
 
-use crate::{Error, ErrorKind,  Length, Result, Tag,
-
-};
+use crate::{Error, ErrorKind, Length, Result, Tag};
 
 /// Reader trait which reads DER-encoded input.
 pub trait Reader<'r>: Sized + Clone {
@@ -39,12 +37,7 @@ pub trait Reader<'r>: Sized + Clone {
     /// - `Err(ErrorKind::Reader)` if the reader can't borrow from the input
     fn read_slice(&mut self, len: Length) -> Result<&'r [u8]>;
 
-    // /// Decode a value which impls the [`Decode`] trait.
-    // fn decode<T: Decode<'r>>(&mut self) -> Result<T> {
-    //     T::decode(self).map_err(|e| e.nested(self.position()))
-    // }
-
-    /// 
+    /// Creates first bounds check
     fn root_nest<'a>(&'a mut self) -> NestedDecoder<'a, Self>
     where
         'r: 'a,

@@ -1,7 +1,7 @@
 //! Streaming PEM reader.
 
 use super::Reader;
-use crate::{ErrorKind,  Length, Result};
+use crate::{ErrorKind, Length, Result};
 use core::cell::RefCell;
 
 #[allow(clippy::arithmetic_side_effects)]
