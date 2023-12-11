@@ -60,6 +60,7 @@ where
         Ok(new_end)
     }
 
+    /// Peek at the next byte of input without modifying the cursor.
     pub fn peek_byte(&self) -> Option<u8> {
         if self.is_finished() {
             None
@@ -68,19 +69,35 @@ where
         }
     }
 
+    /// Get the position within the buffer.
     pub fn position(&self) -> Length {
         self.inner.position()
     }
 
+    /// Attempt to read data borrowed directly from the input as a slice,
+    /// updating the internal cursor position.
+    ///
+    /// # Returns
+    /// - `Ok(slice)` on success
+    /// - `Err(ErrorKind::Incomplete)` if there is not enough data
+    /// - `Err(ErrorKind::Reader)` if the reader can't borrow from the input
     pub fn read_slice(&mut self, len: Length) -> Result<&'r [u8]> {
         self.check_out_of_bounds(len)?;
         self.inner.read_slice(len)
     }
 
+    /// Return an error with the given [`ErrorKind`], annotating it with
+    /// context about where the error occurred.
     pub fn error(&mut self, kind: ErrorKind) -> Error {
         self.inner.error(kind)
     }
 
+    /// Attempt to read input data, writing it into the provided buffer, and
+    /// returning a slice on success.
+    ///
+    /// # Returns
+    /// - `Ok(slice)` if there is sufficient data
+    /// - `Err(ErrorKind::Incomplete)` if there is not enough data
     pub fn read_into<'o>(&mut self, out: &'o mut [u8]) -> Result<&'o [u8]> {
         let len = Length::try_from(out.len())?;
         self.check_out_of_bounds(len)?;
