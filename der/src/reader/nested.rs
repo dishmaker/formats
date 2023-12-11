@@ -134,11 +134,17 @@ where
     where
         F: FnOnce(&mut Self) -> Result<T>,
     {
+        // Save current position
         let old_end: Length = self.end_pos;
+
+        // Swap end boundary with current nest
         self.end_pos = self.check_out_of_bounds(len)?;
-        //let mut reader = NestedDecoder::new(self.inner, len)?;
+
         let ret = f(self);
+        // Revert end position
         self.end_pos = old_end;
+
+        // Return errors after resetting nested position
         self.finish(ret?)
     }
 
@@ -155,7 +161,11 @@ where
 
     /// Attempt to decode an ASN.1 `CONTEXT-SPECIFIC` field with the
     /// provided [`TagNumber`].
-    fn context_specific<T>(&mut self, tag_number: TagNumber, tag_mode: TagMode) -> Result<Option<T>>
+    pub fn context_specific<T>(
+        &mut self,
+        tag_number: TagNumber,
+        tag_mode: TagMode,
+    ) -> Result<Option<T>>
     where
         T: DecodeValue<'r> + FixedTag,
     {
