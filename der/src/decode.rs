@@ -75,9 +75,10 @@ pub trait DecodePem: DecodeOwned + PemLabel {
 #[cfg(feature = "pem")]
 impl<T: DecodeOwned + PemLabel> DecodePem for T {
     fn from_pem(pem: impl AsRef<[u8]>) -> Result<Self> {
-        let mut reader = PemReader::new(pem.as_ref())?.nested_decoder();
+        let mut reader = PemReader::new(pem.as_ref())?;
         Self::validate_pem_label(reader.type_label())?;
-        T::decode(&mut reader)
+        let mut decoder = reader.nested_decoder();
+        T::decode(&mut decoder)
     }
 }
 

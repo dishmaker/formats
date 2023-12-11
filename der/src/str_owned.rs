@@ -3,7 +3,7 @@
 
 use crate::{
     referenced::OwnedToRef, BytesRef, DecodeValue, EncodeValue, Header, Length, Reader, Result,
-    StrRef, Writer,
+    StrRef, Writer, NestedDecoder,
 };
 use alloc::string::String;
 use core::str;
@@ -69,7 +69,7 @@ impl AsRef<[u8]> for StrOwned {
 }
 
 impl<'a> DecodeValue<'a> for StrOwned {
-    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+    fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<'a, R>, header: Header) -> Result<Self> {
         Self::from_bytes(BytesRef::decode_value(reader, header)?.as_slice())
     }
 }

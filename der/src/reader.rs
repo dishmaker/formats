@@ -8,12 +8,11 @@ pub(crate) mod slice;
 pub(crate) use nested::NestedDecoder;
 
 use crate::{
-    asn1::ContextSpecific, Decode, DecodeValue, Encode, Error, ErrorKind, FixedTag, Header, Length,
+    asn1::ContextSpecific, DecodeValue, Error, ErrorKind, FixedTag, Length,
     Result, Tag, TagMode, TagNumber,
 };
 
-#[cfg(feature = "alloc")]
-use alloc::vec::Vec;
+
 
 /// Reader trait which reads DER-encoded input.
 pub trait Reader<'r>: Sized + Clone {
@@ -109,12 +108,7 @@ pub trait Reader<'r>: Sized + Clone {
         }
     }
 
-    /// Read a single byte.
-    fn read_byte(&mut self) -> Result<u8> {
-        let mut buf = [0];
-        self.read_into(&mut buf)?;
-        Ok(buf[0])
-    }
+
 
     /// Attempt to read input data, writing it into the provided buffer, and
     /// returning a slice on success.
@@ -130,13 +124,7 @@ pub trait Reader<'r>: Sized + Clone {
 
 
 
-    /// Read a byte vector of the given length.
-    #[cfg(feature = "alloc")]
-    fn read_vec(&mut self, len: Length) -> Result<Vec<u8>> {
-        let mut bytes = vec![0u8; usize::try_from(len)?];
-        self.read_into(&mut bytes)?;
-        Ok(bytes)
-    }
+
 
     /// Get the number of bytes still remaining in the buffer.
     fn remaining_len(&self) -> Length {

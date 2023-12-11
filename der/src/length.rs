@@ -1,6 +1,6 @@
 //! Length calculations for encoded ASN.1 DER values
 
-use crate::{Decode, DerOrd, Encode, Error, ErrorKind, Reader, Result, SliceWriter, Writer};
+use crate::{Decode, DerOrd, Encode, Error, ErrorKind, Reader, Result, SliceWriter, Writer, NestedDecoder};
 use core::{
     cmp::Ordering,
     fmt,
@@ -207,7 +207,7 @@ impl TryFrom<Length> for usize {
 }
 
 impl<'a> Decode<'a> for Length {
-    fn decode<R: Reader<'a>>(reader: &mut R) -> Result<Length> {
+    fn decode<R: Reader<'a>>(reader: &mut NestedDecoder<'a, R>) -> Result<Length> {
         match reader.read_byte()? {
             // Note: per X.690 Section 8.1.3.6.1 the byte 0x80 encodes indefinite
             // lengths, which are not allowed in DER, so disallow that byte.
@@ -356,7 +356,7 @@ impl IndefiniteLength {
 }
 
 impl<'a> Decode<'a> for IndefiniteLength {
-    fn decode<R: Reader<'a>>(reader: &mut R) -> Result<IndefiniteLength> {
+    fn decode<R: Reader<'a>>(reader: &mut NestedDecoder<'a, R>) -> Result<IndefiniteLength> {
         if reader.peek_byte() == Some(INDEFINITE_LENGTH_OCTET) {
             // Consume the byte we already peeked at.
             let byte = reader.read_byte()?;

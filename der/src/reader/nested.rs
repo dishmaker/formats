@@ -2,6 +2,9 @@
 
 use crate::{reader::Reader, Decode, Encode, Error, ErrorKind, Header, Length, Result, Tag};
 
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
+
 /// Reader type used by [`Reader::read_nested`].
 pub struct NestedDecoder<'i, R> {
     /// Inner reader type.
@@ -124,6 +127,22 @@ impl<'i, 'r, R: Reader<'r>> NestedDecoder<'i, R> {
         self.read_nested(header.length, f)
     }
 
+    /// Read a byte vector of the given length.
+    #[cfg(feature = "alloc")]
+    pub fn read_vec(&mut self, len: Length) -> Result<Vec<u8>> {
+        let mut bytes = vec![0u8; usize::try_from(len)?];
+        self.read_into(&mut bytes)?;
+        Ok(bytes)
+    }
+
+
+
+    /// Read a single byte.
+    pub fn read_byte(&mut self) -> Result<u8> {
+        let mut buf = [0];
+        self.read_into(&mut buf)?;
+        Ok(buf[0])
+    }
 
 
     // TODO: make only available for Clone

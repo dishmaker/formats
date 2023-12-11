@@ -2,7 +2,7 @@
 //! library-level length limitation i.e. `Length::max()`.
 
 use crate::{
-    DecodeValue, DerOrd, EncodeValue, Error, Header, Length, Reader, Result, StrRef, Writer,
+    DecodeValue, DerOrd, EncodeValue, Error, Header, Length, Reader, Result, StrRef, Writer, NestedDecoder,
 };
 use core::cmp::Ordering;
 
@@ -58,7 +58,7 @@ impl AsRef<[u8]> for BytesRef<'_> {
 }
 
 impl<'a> DecodeValue<'a> for BytesRef<'a> {
-    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+    fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<'a, R>, header: Header) -> Result<Self> {
         reader.read_slice(header.length).and_then(Self::new)
     }
 }

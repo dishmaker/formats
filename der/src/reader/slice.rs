@@ -1,6 +1,6 @@
 //! Slice reader.
 
-use crate::{BytesRef, Decode, Error, ErrorKind, Header, Length, Reader, Result, Tag};
+use crate::{BytesRef, Error, ErrorKind, Length, Reader, Result, Tag};
 
 /// [`Reader`] which consumes an input byte slice.
 #[derive(Clone, Debug)]
