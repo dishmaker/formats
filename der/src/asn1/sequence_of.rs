@@ -2,7 +2,7 @@
 
 use crate::{
     arrayvec, ord::iter_cmp, ArrayVec, Decode, DecodeValue, DerOrd, Encode, EncodeValue, FixedTag,
-    Header, Length, Reader, Result, Tag, ValueOrd, Writer,
+    Header, Length, NestedDecoder, Reader, Result, Tag, ValueOrd, Writer,
 };
 use core::cmp::Ordering;
 
@@ -66,7 +66,12 @@ impl<'a, T, const N: usize> DecodeValue<'a> for SequenceOf<T, N>
 where
     T: Decode<'a>,
 {
-    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+    fn decode_value<'i, R: Reader<'a>>(
+        reader: &mut NestedDecoder<'i, R>,
+        header: Header,
+    ) -> Result<Self> 
+    where
+    'a: 'i,{
         reader.read_nested(header.length, |reader| {
             let mut sequence_of = Self::new();
 
@@ -131,7 +136,13 @@ impl<'a, T, const N: usize> DecodeValue<'a> for [T; N]
 where
     T: Decode<'a>,
 {
-    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+    fn decode_value<'i, R: Reader<'a>>(
+        reader: &mut NestedDecoder<'i, R>,
+        header: Header,
+    ) -> Result<Self>
+    where
+        'a: 'i,
+    {
         let sequence_of = SequenceOf::<T, N>::decode_value(reader, header)?;
 
         // TODO(tarcieri): use `[T; N]::try_map` instead of `expect` when stable
@@ -182,7 +193,12 @@ impl<'a, T> DecodeValue<'a> for Vec<T>
 where
     T: Decode<'a>,
 {
-    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+    fn decode_value<'i, R: Reader<'a>>(
+        reader: &mut NestedDecoder<'i, R>,
+        header: Header,
+    ) -> Result<Self>
+    where
+    'a: 'i, {
         reader.read_nested(header.length, |reader| {
             let mut sequence_of = Self::new();
 

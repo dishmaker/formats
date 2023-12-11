@@ -4,7 +4,7 @@ use crate::{
     datetime::{self, DateTime},
     ord::OrdIsValueOrd,
     DecodeValue, EncodeValue, Error, ErrorKind, FixedTag, Header, Length, Reader, Result, Tag,
-    Writer,
+    Writer, NestedDecoder,
 };
 use core::time::Duration;
 
@@ -82,7 +82,9 @@ impl UtcTime {
 impl_any_conversions!(UtcTime);
 
 impl<'a> DecodeValue<'a> for UtcTime {
-    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+    fn decode_value<'i, R: Reader<'a>>(reader: &mut NestedDecoder<'i, R>, header: Header) -> Result<Self>
+    where
+    'a: 'i {
         if Self::LENGTH != usize::try_from(header.length)? {
             return Err(Self::TAG.value_error());
         }

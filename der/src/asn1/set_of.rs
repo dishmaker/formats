@@ -12,7 +12,7 @@
 
 use crate::{
     arrayvec, ord::iter_cmp, ArrayVec, Decode, DecodeValue, DerOrd, Encode, EncodeValue, Error,
-    ErrorKind, FixedTag, Header, Length, Reader, Result, Tag, ValueOrd, Writer,
+    ErrorKind, FixedTag, Header, Length, NestedDecoder, Reader, Result, Tag, ValueOrd, Writer,
 };
 use core::cmp::Ordering;
 
@@ -108,7 +108,12 @@ impl<'a, T, const N: usize> DecodeValue<'a> for SetOf<T, N>
 where
     T: Decode<'a> + DerOrd,
 {
-    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+    fn decode_value<'i, R: Reader<'a>>(
+        reader: &mut NestedDecoder<'i, R>,
+        header: Header,
+    ) -> Result<Self>
+    where
+    'a: 'i, {
         reader.read_nested(header.length, |reader| {
             let mut result = Self::new();
 
@@ -326,7 +331,13 @@ impl<'a, T> DecodeValue<'a> for SetOfVec<T>
 where
     T: Decode<'a> + DerOrd,
 {
-    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+    fn decode_value<'i, R: Reader<'a>>(
+        reader: &mut NestedDecoder<'i, R>,
+        header: Header,
+    ) -> Result<Self>
+    where
+        'a: 'i,
+    {
         reader.read_nested(header.length, |reader| {
             let mut inner = Vec::new();
 

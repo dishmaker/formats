@@ -1,8 +1,8 @@
 //! ASN.1 `UTF8String` support.
 
 use crate::{
-    asn1::AnyRef, ord::OrdIsValueOrd, EncodeValue, Error, FixedTag, Length, Result, StrRef, Tag,
-    Writer,
+    asn1::AnyRef, ord::OrdIsValueOrd, EncodeValue, Error, FixedTag, Length, NestedDecoder, Result,
+    StrRef, Tag, Writer,
 };
 use core::{fmt, ops::Deref, str};
 
@@ -116,7 +116,13 @@ impl<'a> TryFrom<AnyRef<'a>> for String {
 
 #[cfg(feature = "alloc")]
 impl<'a> DecodeValue<'a> for String {
-    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+    fn decode_value<'i, R: Reader<'a>>(
+        reader: &mut NestedDecoder<'i, R>,
+        header: Header,
+    ) -> Result<Self>
+    where
+        'a: 'i,
+    {
         Ok(String::from_utf8(reader.read_vec(header.length)?)?)
     }
 }

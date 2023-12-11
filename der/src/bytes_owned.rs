@@ -3,7 +3,7 @@
 
 use crate::{
     referenced::OwnedToRef, BytesRef, DecodeValue, DerOrd, EncodeValue, Error, Header, Length,
-    Reader, Result, StrRef, Writer, NestedDecoder,
+    NestedDecoder, Reader, Result, StrRef, Writer,
 };
 use alloc::{boxed::Box, vec::Vec};
 use core::cmp::Ordering;
@@ -53,7 +53,13 @@ impl AsRef<[u8]> for BytesOwned {
 }
 
 impl<'a> DecodeValue<'a> for BytesOwned {
-    fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<'a, R>, header: Header) -> Result<Self> {
+    fn decode_value<'i, R: Reader<'a>>(
+        reader: &mut NestedDecoder<'i, R>,
+        header: Header,
+    ) -> Result<Self>
+    where
+        'a: 'i,
+    {
         reader.read_vec(header.length).and_then(Self::new)
     }
 }

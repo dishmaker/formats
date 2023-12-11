@@ -4,7 +4,7 @@
 
 use crate::{
     BytesRef, Choice, Decode, DecodeValue, DerOrd, EncodeValue, Error, ErrorKind, Header, Length,
-    Reader, Result, SliceReader, Tag, Tagged, ValueOrd, Writer,
+    NestedDecoder, Reader, Result, SliceReader, Tag, Tagged, ValueOrd, Writer,
 };
 use core::cmp::Ordering;
 
@@ -69,7 +69,8 @@ impl<'a> AnyRef<'a> {
             length: self.value.len(),
         };
 
-        let mut decoder = SliceReader::new(self.value())?;
+        let mut reader = SliceReader::new(self.value())?;
+        let mut decoder = reader.root_nest();
         let result = T::decode_value(&mut decoder, header)?;
         decoder.finish(result)
     }
@@ -99,14 +100,23 @@ impl<'a> Choice<'a> for AnyRef<'a> {
 }
 
 impl<'a> Decode<'a> for AnyRef<'a> {
-    fn decode<R: Reader<'a>>(reader: &mut R) -> Result<AnyRef<'a>> {
+    fn decode<'i, R: Reader<'a>>(reader: &mut NestedDecoder<'i, R>) -> Result<AnyRef<'a>>
+    where
+        'a: 'i,
+    {
         let header = Header::decode(reader)?;
         Self::decode_value(reader, header)
     }
 }
 
 impl<'a> DecodeValue<'a> for AnyRef<'a> {
-    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+    fn decode_value<'i, R: Reader<'a>>(
+        reader: &mut NestedDecoder<'i, R>,
+        header: Header,
+    ) -> Result<Self>
+    where
+        'a: 'i,
+    {
         Ok(Self {
             tag: header.tag,
             value: BytesRef::decode_value(reader, header)?,
@@ -234,14 +244,23 @@ mod allocating {
     }
 
     impl<'a> Decode<'a> for Any {
-        fn decode<R: Reader<'a>>(reader: &mut R) -> Result<Self> {
+        fn decode<'i, R: Reader<'a>>(reader: &mut NestedDecoder<'i, R>) -> Result<Self>
+        where
+            'a: 'i,
+        {
             let header = Header::decode(reader)?;
             Self::decode_value(reader, header)
         }
     }
 
     impl<'a> DecodeValue<'a> for Any {
-        fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+        fn decode_value<'i, R: Reader<'a>>(
+            reader: &mut NestedDecoder<'i, R>,
+            header: Header,
+        ) -> Result<Self>
+        where
+            'a: 'i,
+        {
             let value = reader.read_vec(header.length)?;
             Self::new(header.tag, value)
         }

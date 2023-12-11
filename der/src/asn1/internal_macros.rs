@@ -31,7 +31,7 @@ macro_rules! impl_string_type {
 
             use crate::{
                 ord::OrdIsValueOrd, BytesRef, DecodeValue, EncodeValue, Header, Length, Reader,
-                Result, Writer,
+                Result, Writer, NestedDecoder,
             };
             use core::{fmt, str};
 
@@ -48,7 +48,9 @@ macro_rules! impl_string_type {
             }
 
             impl<'__der: $($li),*, $($li),*> DecodeValue<'__der> for $type {
-                fn decode_value<R: Reader<'__der>>(reader: &mut R, header: Header) -> Result<Self> {
+                fn decode_value<'i, R: Reader<'__der>>(reader: &mut NestedDecoder<'i, R>, header: Header) -> Result<Self>
+                where
+                    '__der: 'i {
                     Self::new(BytesRef::decode_value(reader, header)?.as_slice())
                 }
             }

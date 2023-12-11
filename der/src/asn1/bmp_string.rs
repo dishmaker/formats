@@ -2,7 +2,7 @@
 
 use crate::{
     BytesOwned, DecodeValue, EncodeValue, Error, FixedTag, Header, Length, Reader, Result, Tag,
-    Writer,
+    Writer, NestedDecoder,
 };
 use alloc::{boxed::Box, vec::Vec};
 use core::{fmt, str::FromStr};
@@ -90,7 +90,9 @@ impl AsRef<[u8]> for BmpString {
 }
 
 impl<'a> DecodeValue<'a> for BmpString {
-    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+    fn decode_value<'i, R: Reader<'a>>(reader: &mut NestedDecoder<'i, R>, header: Header) -> Result<Self>
+    where
+    'a: 'i {
         Self::from_ucs2(reader.read_vec(header.length)?)
     }
 }

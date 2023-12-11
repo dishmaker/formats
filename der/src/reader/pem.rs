@@ -178,7 +178,7 @@ impl<'i> Reader<'i> for PemReader<'i> {
     //     if self.is_finished() {
     //         Err(Error::incomplete(self.offset()))
     //     } else {
-    //         Header::decode(&mut self.clone())
+    //         Header::decode(&mut self.clone().root_nest())
     //     }
     // }
 

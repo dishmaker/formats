@@ -3,7 +3,7 @@
 use super::{is_highest_bit_set, uint, value_cmp};
 use crate::{
     ord::OrdIsValueOrd, AnyRef, BytesRef, DecodeValue, EncodeValue, Error, ErrorKind, FixedTag,
-    Header, Length, Reader, Result, Tag, ValueOrd, Writer,
+    Header, Length, NestedDecoder, Reader, Result, Tag, ValueOrd, Writer,
 };
 use core::cmp::Ordering;
 
@@ -14,7 +14,9 @@ macro_rules! impl_encoding_traits {
     ($($int:ty => $uint:ty),+) => {
         $(
             impl<'a> DecodeValue<'a> for $int {
-                fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+                fn decode_value<'i, R: Reader<'a>>(reader: &mut NestedDecoder<'i, R>, header: Header) -> Result<Self>
+                where
+                    'a: 'i {
                     let mut buf = [0u8; Self::BITS as usize / 8];
                     let max_length = u32::from(header.length) as usize;
 
@@ -122,7 +124,13 @@ impl<'a> IntRef<'a> {
 impl_any_conversions!(IntRef<'a>, 'a);
 
 impl<'a> DecodeValue<'a> for IntRef<'a> {
-    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+    fn decode_value<'i, R: Reader<'a>>(
+        reader: &mut NestedDecoder<'i, R>,
+        header: Header,
+    ) -> Result<Self>
+    where
+        'a: 'i,
+    {
         let bytes = BytesRef::decode_value(reader, header)?;
         validate_canonical(bytes.as_slice())?;
 
@@ -167,8 +175,8 @@ mod allocating {
         asn1::Uint,
         ord::OrdIsValueOrd,
         referenced::{OwnedToRef, RefToOwned},
-        BytesOwned, DecodeValue, EncodeValue, ErrorKind, FixedTag, Header, Length, Reader, Result,
-        Tag, Writer,
+        BytesOwned, DecodeValue, EncodeValue, ErrorKind, FixedTag, Header, Length, NestedDecoder,
+        Reader, Result, Tag, Writer,
     };
     use alloc::vec::Vec;
 
@@ -214,7 +222,13 @@ mod allocating {
     impl_any_conversions!(Int);
 
     impl<'a> DecodeValue<'a> for Int {
-        fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+        fn decode_value<'i, R: Reader<'a>>(
+            reader: &mut NestedDecoder<'i, R>,
+            header: Header,
+        ) -> Result<Self>
+        where
+            'a: 'i,
+        {
             let bytes = BytesOwned::decode_value(reader, header)?;
             validate_canonical(bytes.as_slice())?;
 

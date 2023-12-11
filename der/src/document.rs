@@ -1,6 +1,9 @@
 //! ASN.1 DER-encoded documents stored on the heap.
 
-use crate::{Decode, Encode, Error, FixedTag, Length, Reader, Result, SliceReader, Tag, Writer, NestedDecoder};
+use crate::{
+    Decode, Encode, Error, FixedTag, Length, NestedDecoder, Reader, Result, SliceReader, Tag,
+    Writer,
+};
 use alloc::vec::Vec;
 use core::fmt::{self, Debug};
 
@@ -141,7 +144,10 @@ impl Debug for Document {
 }
 
 impl<'a> Decode<'a> for Document {
-    fn decode<R: Reader<'a>>(reader: &mut NestedDecoder<'a, R>) -> Result<Document> {
+    fn decode<'i, R: Reader<'a>>(reader: &mut NestedDecoder<'i, R>) -> Result<Document>
+    where
+        'a: 'i,
+    {
         let header = reader.peek_header()?;
         let length = (header.encoded_len()? + header.length)?;
         let bytes = reader.read_slice(length)?;
@@ -179,7 +185,8 @@ impl TryFrom<Vec<u8>> for Document {
     type Error = Error;
 
     fn try_from(der_bytes: Vec<u8>) -> Result<Self> {
-        let mut decoder = SliceReader::new(&der_bytes)?.nested_decoder();
+        let mut reader = SliceReader::new(&der_bytes)?;
+        let mut decoder = reader.root_nest();
         decode_sequence(&mut decoder)?;
         decoder.finish(())?;
 

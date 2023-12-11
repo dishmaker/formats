@@ -2,7 +2,7 @@
 
 use crate::{
     asn1::AnyRef, ord::OrdIsValueOrd, BytesRef, Decode, DecodeValue, EncodeValue, ErrorKind,
-    FixedTag, Header, Length, Reader, Result, Tag, Writer,
+    FixedTag, Header, Length, NestedDecoder, Reader, Result, Tag, Writer,
 };
 
 /// ASN.1 `OCTET STRING` type: borrowed form.
@@ -54,7 +54,13 @@ impl AsRef<[u8]> for OctetStringRef<'_> {
 }
 
 impl<'a> DecodeValue<'a> for OctetStringRef<'a> {
-    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+    fn decode_value<'i, R: Reader<'a>>(
+        reader: &mut NestedDecoder<'i, R>,
+        header: Header,
+    ) -> Result<Self>
+    where
+        'a: 'i,
+    {
         let inner = BytesRef::decode_value(reader, header)?;
         Ok(Self { inner })
     }
@@ -156,7 +162,13 @@ mod allocating {
     }
 
     impl<'a> DecodeValue<'a> for OctetString {
-        fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+        fn decode_value<'i, R: Reader<'a>>(
+            reader: &mut NestedDecoder<'i, R>,
+            header: Header,
+        ) -> Result<Self>
+        where
+            'a: 'i,
+        {
             Self::new(reader.read_vec(header.length)?)
         }
     }

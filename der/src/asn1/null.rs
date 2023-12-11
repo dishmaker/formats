@@ -2,7 +2,7 @@
 
 use crate::{
     asn1::AnyRef, ord::OrdIsValueOrd, BytesRef, DecodeValue, EncodeValue, Error, ErrorKind,
-    FixedTag, Header, Length, Reader, Result, Tag, Writer,
+    FixedTag, Header, Length, NestedDecoder, Reader, Result, Tag, Writer,
 };
 
 /// ASN.1 `NULL` type.
@@ -12,7 +12,13 @@ pub struct Null;
 impl_any_conversions!(Null);
 
 impl<'a> DecodeValue<'a> for Null {
-    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+    fn decode_value<'i, R: Reader<'a>>(
+        reader: &mut NestedDecoder<'i, R>,
+        header: Header,
+    ) -> Result<Self>
+    where
+        'a: 'i,
+    {
         if header.length.is_zero() {
             Ok(Null)
         } else {
@@ -58,7 +64,13 @@ impl<'a> From<()> for AnyRef<'a> {
 }
 
 impl<'a> DecodeValue<'a> for () {
-    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+    fn decode_value<'i, R: Reader<'a>>(
+        reader: &mut NestedDecoder<'i, R>,
+        header: Header,
+    ) -> Result<Self>
+    where
+        'a: 'i,
+    {
         Null::decode_value(reader, header)?;
         Ok(())
     }

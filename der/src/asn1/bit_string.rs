@@ -1,8 +1,8 @@
 //! ASN.1 `BIT STRING` support.
 
 use crate::{
-    BytesRef, DecodeValue, DerOrd, EncodeValue, Error, ErrorKind, FixedTag, Header, Length, Reader,
-    Result, Tag, ValueOrd, Writer,
+    BytesRef, DecodeValue, DerOrd, EncodeValue, Error, ErrorKind, FixedTag, Header, Length,
+    NestedDecoder, Reader, Result, Tag, ValueOrd, Writer,
 };
 use core::{cmp::Ordering, iter::FusedIterator};
 
@@ -120,7 +120,13 @@ impl<'a> BitStringRef<'a> {
 impl_any_conversions!(BitStringRef<'a>, 'a);
 
 impl<'a> DecodeValue<'a> for BitStringRef<'a> {
-    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+    fn decode_value<'i, R: Reader<'a>>(
+        reader: &mut NestedDecoder<'i, R>,
+        header: Header,
+    ) -> Result<Self>
+    where
+        'a: 'i,
+    {
         let header = Header {
             tag: header.tag,
             length: (header.length - Length::ONE)?,
@@ -309,7 +315,13 @@ mod allocating {
     impl_any_conversions!(BitString);
 
     impl<'a> DecodeValue<'a> for BitString {
-        fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+        fn decode_value<'i, R: Reader<'a>>(
+            reader: &mut NestedDecoder<'i, R>,
+            header: Header,
+        ) -> Result<Self>
+        where
+            'a: 'i,
+        {
             let inner_len = (header.length - Length::ONE)?;
             let unused_bits = reader.read_byte()?;
             let inner = reader.read_vec(inner_len)?;
@@ -442,7 +454,13 @@ where
     T::Type: From<bool>,
     T::Type: core::ops::Shl<usize, Output = T::Type>,
 {
-    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+    fn decode_value<'i, R: Reader<'a>>(
+        reader: &mut NestedDecoder<'i, R>,
+        header: Header,
+    ) -> Result<Self>
+    where
+        'a: 'i,
+    {
         let position = reader.position();
         let bits = BitStringRef::decode_value(reader, header)?;
 

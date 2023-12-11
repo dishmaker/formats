@@ -2,7 +2,7 @@
 
 use crate::{
     asn1::AnyRef, ord::OrdIsValueOrd, DecodeValue, EncodeValue, Error, FixedTag, Header, Length,
-    Reader, Result, Tag, Tagged, Writer,
+    NestedDecoder, Reader, Result, Tag, Tagged, Writer,
 };
 use const_oid::ObjectIdentifier;
 
@@ -10,7 +10,13 @@ use const_oid::ObjectIdentifier;
 use super::Any;
 
 impl<'a> DecodeValue<'a> for ObjectIdentifier {
-    fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+    fn decode_value<'i, R: Reader<'a>>(
+        reader: &mut NestedDecoder<'i, R>,
+        header: Header,
+    ) -> Result<Self>
+    where
+        'a: 'i,
+    {
         let mut buf = [0u8; ObjectIdentifier::MAX_SIZE];
         let slice = buf
             .get_mut(..header.length.try_into()?)
