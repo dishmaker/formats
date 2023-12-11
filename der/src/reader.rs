@@ -5,7 +5,7 @@ pub(crate) mod nested;
 pub(crate) mod pem;
 pub(crate) mod slice;
 
-pub(crate) use nested::NestedReader;
+pub(crate) use nested::NestedDecoder;
 
 use crate::{
     asn1::ContextSpecific, Decode, DecodeValue, Encode, Error, ErrorKind, FixedTag, Header, Length,
@@ -16,18 +16,23 @@ use crate::{
 use alloc::vec::Vec;
 
 /// Reader trait which reads DER-encoded input.
-pub trait Reader<'r>: Sized {
+pub trait Reader<'r>: Sized + Clone {
+
+    fn nested_decoder(self) -> NestedDecoder<'r, Self> {
+        NestedDecoder::new(&mut self, self.input_len()).unwrap()
+    }
+
     /// Get the length of the input.
     fn input_len(&self) -> Length;
 
     /// Peek at the next byte of input without modifying the cursor.
     fn peek_byte(&self) -> Option<u8>;
 
-    /// Peek forward in the input data, attempting to decode a [`Header`] from
-    /// the data at the current position in the decoder.
-    ///
-    /// Does not modify the decoder's state.
-    fn peek_header(&self) -> Result<Header>;
+    // /// Peek forward in the input data, attempting to decode a [`Header`] from
+    // /// the data at the current position in the decoder.
+    // ///
+    // /// Does not modify the decoder's state.
+    // fn peek_header(&self) -> Result<Header>;
 
     /// Get the position within the buffer.
     fn position(&self) -> Length;
@@ -54,10 +59,10 @@ pub trait Reader<'r>: Sized {
         .map(|field| field.value))
     }
 
-    /// Decode a value which impls the [`Decode`] trait.
-    fn decode<T: Decode<'r>>(&mut self) -> Result<T> {
-        T::decode(self).map_err(|e| e.nested(self.position()))
-    }
+    // /// Decode a value which impls the [`Decode`] trait.
+    // fn decode<T: Decode<'r>>(&mut self) -> Result<T> {
+    //     T::decode(self).map_err(|e| e.nested(self.position()))
+    // }
 
     /// Return an error with the given [`ErrorKind`], annotating it with
     /// context about where the error occurred.
@@ -123,15 +128,7 @@ pub trait Reader<'r>: Sized {
         Ok(buf)
     }
 
-    /// Read nested data of the given length.
-    fn read_nested<'n, T, F>(&'n mut self, len: Length, f: F) -> Result<T>
-    where
-        F: FnOnce(&mut NestedReader<'n, Self>) -> Result<T>,
-    {
-        let mut reader = NestedReader::new(self, len)?;
-        let ret = f(&mut reader)?;
-        reader.finish(ret)
-    }
+
 
     /// Read a byte vector of the given length.
     #[cfg(feature = "alloc")]
@@ -147,21 +144,7 @@ pub trait Reader<'r>: Sized {
         self.input_len().saturating_sub(self.position())
     }
 
-    /// Read an ASN.1 `SEQUENCE`, creating a nested [`Reader`] for the body and
-    /// calling the provided closure with it.
-    fn sequence<'n, F, T>(&'n mut self, f: F) -> Result<T>
-    where
-        F: FnOnce(&mut NestedReader<'n, Self>) -> Result<T>,
-    {
-        let header = Header::decode(self)?;
-        header.tag.assert_eq(Tag::Sequence)?;
-        self.read_nested(header.length, f)
-    }
 
-    /// Obtain a slice of bytes contain a complete TLV production suitable for parsing later.
-    fn tlv_bytes(&mut self) -> Result<&'r [u8]> {
-        let header = self.peek_header()?;
-        let header_len = header.encoded_len()?;
-        self.read_slice((header_len + header.length)?)
-    }
+
+
 }

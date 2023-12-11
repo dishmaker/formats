@@ -67,9 +67,7 @@ impl<'a> Reader<'a> for SliceReader<'a> {
             .and_then(|bytes| bytes.first().cloned())
     }
 
-    fn peek_header(&self) -> Result<Header> {
-        Header::decode(&mut self.clone())
-    }
+
 
     fn position(&self) -> Length {
         self.position
@@ -92,16 +90,16 @@ impl<'a> Reader<'a> for SliceReader<'a> {
         }
     }
 
-    fn decode<T: Decode<'a>>(&mut self) -> Result<T> {
-        if self.is_failed() {
-            return Err(self.error(ErrorKind::Failed));
-        }
+    // fn decode<T: Decode<'a>>(&mut self) -> Result<T> {
+    //     if self.is_failed() {
+    //         return Err(self.error(ErrorKind::Failed));
+    //     }
 
-        T::decode(self).map_err(|e| {
-            self.failed = true;
-            e.nested(self.position)
-        })
-    }
+    //     T::decode(self).map_err(|e| {
+    //         self.failed = true;
+    //         e.nested(self.position)
+    //     })
+    // }
 
     fn error(&mut self, kind: ErrorKind) -> Error {
         self.failed = true;
@@ -140,7 +138,7 @@ mod tests {
 
     #[test]
     fn empty_message() {
-        let mut reader = SliceReader::new(&[]).unwrap();
+        let mut reader = SliceReader::new(&[]).unwrap().nested_decoder();
         let err = bool::decode(&mut reader).err().unwrap();
         assert_eq!(Some(Length::ZERO), err.position());
 
@@ -160,7 +158,7 @@ mod tests {
     fn invalid_field_length() {
         const MSG_LEN: usize = 2;
 
-        let mut reader = SliceReader::new(&EXAMPLE_MSG[..MSG_LEN]).unwrap();
+        let mut reader = SliceReader::new(&EXAMPLE_MSG[..MSG_LEN]).unwrap().nested_decoder();
         let err = i8::decode(&mut reader).err().unwrap();
         assert_eq!(Some(Length::from(2u8)), err.position());
 
@@ -178,7 +176,7 @@ mod tests {
 
     #[test]
     fn trailing_data() {
-        let mut reader = SliceReader::new(EXAMPLE_MSG).unwrap();
+        let mut reader = SliceReader::new(EXAMPLE_MSG).unwrap().nested_decoder();
         let x = i8::decode(&mut reader).unwrap();
         assert_eq!(42i8, x);
 
@@ -204,7 +202,7 @@ mod tests {
 
     #[test]
     fn peek_header() {
-        let reader = SliceReader::new(EXAMPLE_MSG).unwrap();
+        let reader = SliceReader::new(EXAMPLE_MSG).unwrap().nested_decoder();
         assert_eq!(reader.position(), Length::ZERO);
 
         let header = reader.peek_header().unwrap();

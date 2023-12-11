@@ -174,13 +174,13 @@ impl<'i> Reader<'i> for PemReader<'i> {
         }
     }
 
-    fn peek_header(&self) -> Result<Header> {
-        if self.is_finished() {
-            Err(Error::incomplete(self.offset()))
-        } else {
-            Header::decode(&mut self.clone())
-        }
-    }
+    // fn peek_header(&self) -> Result<Header> {
+    //     if self.is_finished() {
+    //         Err(Error::incomplete(self.offset()))
+    //     } else {
+    //         Header::decode(&mut self.clone())
+    //     }
+    // }
 
     fn position(&self) -> Length {
         self.position
