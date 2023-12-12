@@ -205,12 +205,14 @@ impl<'r, R: Reader<'r>> NestedDecoder<R> {
         }
     }
 
-    /// Reads header on a cloned reader, so it's position will not be changed
+    /// Reads header on a temporary reader, so current reader's position will not be changed
     pub fn peek_header(&self) -> Result<Header> {
         if self.is_finished() {
             Err(Error::incomplete(self.position()))
         } else {
-            let mut decoder = SliceReader::new(self.inner.peek_bytes())?.root_nest();
+            // Create reader on peeked bytes
+            let peeked = self.inner.peek_bytes();
+            let mut decoder = SliceReader::new(peeked)?.root_nest();
             let header: Header = Header::decode(&mut decoder)?;
 
             // Length of header is equal to number of bytes the reader advanced
