@@ -1,6 +1,6 @@
 //! Trait definition for [`Decode`].
 
-use crate::{FixedTag, Header, NestedDecoder, Reader, Result, SliceReader};
+use crate::{Error, FixedTag, Header, NestedDecoder, Reader, Result, SliceReader};
 use core::marker::PhantomData;
 
 #[cfg(feature = "pem")]
@@ -25,7 +25,8 @@ pub trait Decode<'a>: Sized {
         let reader = SliceReader::new(bytes)?;
         let mut decoder = reader.root_nest();
 
-        let result = Self::decode(&mut decoder)?;
+        let result = Self::decode(&mut decoder);
+        let result = result.map_err(|err| Error::new(err.kind(), decoder.position()))?;
         decoder.finish(result)
     }
 }

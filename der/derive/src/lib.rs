@@ -129,6 +129,7 @@ macro_rules! abort {
 
 mod asn1_type;
 mod attributes;
+mod bitstring;
 mod choice;
 mod enumerated;
 mod sequence;
@@ -138,6 +139,7 @@ mod value_ord;
 use crate::{
     asn1_type::Asn1Type,
     attributes::{FieldAttrs, TypeAttrs, ATTR_NAME},
+    bitstring::DeriveBitString,
     choice::DeriveChoice,
     enumerated::DeriveEnumerated,
     sequence::DeriveSequence,
@@ -289,6 +291,16 @@ pub fn derive_sequence(input: TokenStream) -> TokenStream {
 pub fn derive_value_ord(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     match DeriveValueOrd::new(input) {
+        Ok(t) => t.to_tokens().into(),
+        Err(e) => e.to_compile_error().into(),
+    }
+}
+
+/// Derive the [`BitString`] on a bool `struct`.
+#[proc_macro_derive(BitString, attributes(asn1))]
+pub fn derive_bitstring(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    match DeriveBitString::new(input) {
         Ok(t) => t.to_tokens().into(),
         Err(e) => e.to_compile_error().into(),
     }

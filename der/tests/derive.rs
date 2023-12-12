@@ -207,6 +207,7 @@ mod sequence {
         asn1::{AnyRef, ObjectIdentifier, SetOf},
         Decode, Encode, Sequence, ValueOrd,
     };
+    use der_derive::BitString;
     use hex_literal::hex;
 
     pub fn default_false_example() -> bool {
@@ -361,6 +362,8 @@ mod sequence {
     const ALGORITHM_IDENTIFIER_DER: &[u8] =
         &hex!("30 13 06 07 2a 86 48 ce 3d 02 01 06 08 2a 86 48 ce 3d 03 01 07");
 
+    const BITSTRING_EXAMPLE: &[u8] = &hex!("03 03 06 03 80");
+
     #[derive(Sequence)]
     #[asn1(tag_mode = "IMPLICIT")]
     pub struct TypeCheckExpandedSequenceFieldAttributeCombinations<'a> {
@@ -459,5 +462,33 @@ mod sequence {
             ALGORITHM_IDENTIFIER_DER,
             algorithm_identifier.to_der().unwrap()
         );
+    }
+
+    #[derive(BitString)]
+    pub struct BitStringTest {
+        pub first_bit: bool,
+        pub second_bit: bool,
+        pub third_bit: bool,
+        pub fourth_bit: bool,
+        pub a: bool,
+        pub b: bool,
+        pub almost_least_significant: bool,
+        pub least_significant_bit: bool,
+
+        // second byte
+        pub second_byte_bit: bool,
+        pub second_byte_bit2: bool,
+    }
+
+    #[test]
+    fn decode_bitstring() {
+        let test_flags = BitStringTest::from_der(BITSTRING_EXAMPLE).unwrap();
+
+        assert_eq!(false, test_flags.first_bit);
+
+        assert_eq!(true, test_flags.almost_least_significant);
+        assert_eq!(true, test_flags.least_significant_bit);
+        assert_eq!(true, test_flags.second_byte_bit);
+        assert_eq!(false, test_flags.second_byte_bit2);
     }
 }

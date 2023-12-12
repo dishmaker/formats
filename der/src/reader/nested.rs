@@ -232,4 +232,9 @@ impl<'r, R: Reader<'r>> NestedDecoder<R> {
     pub fn decode<T: Decode<'r>>(&mut self) -> Result<T> {
         T::decode(self)
     }
+
+    /// Returns inner reader. Discards current nesting limit
+    pub fn into_inner(self) -> R {
+        self.inner
+    }
 }

@@ -338,6 +338,7 @@ mod decode;
 mod encode;
 mod encode_ref;
 mod error;
+mod fixedlenbits;
 mod header;
 mod length;
 mod ord;
@@ -360,6 +361,7 @@ pub use crate::{
     encode::{Encode, EncodeValue},
     encode_ref::{EncodeRef, EncodeValueRef},
     error::{Error, ErrorKind, Result},
+    fixedlenbits::FixedLenBitString,
     header::Header,
     length::{IndefiniteLength, Length},
     ord::{DerOrd, ValueOrd},

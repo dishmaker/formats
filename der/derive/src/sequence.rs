@@ -89,7 +89,7 @@ impl DeriveSequence {
                 fn decode_value<R: ::der::Reader<#lifetime>>(
                     reader: &mut ::der::NestedDecoder<R>,
                     header: ::der::Header,
-                ) -> ::der::Result<Self> 
+                ) -> ::der::Result<Self>
                 {
                     use ::der::{Decode as _, DecodeValue as _, Reader as _};
 
