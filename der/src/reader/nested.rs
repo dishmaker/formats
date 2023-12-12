@@ -77,8 +77,13 @@ impl<'r, R: Reader<'r>> NestedDecoder<R> {
         if self.is_finished() {
             None
         } else {
-            self.inner.peek_bytes().get(0).cloned()
+            self.peek_bytes().get(0).cloned()
         }
+    }
+
+    /// Peek at most 8 bytes (3 byte tag + 5 length)
+    fn peek_bytes(&self) -> &[u8] {
+        self.inner.peek_bytes()
     }
 
     /// Get the position within the buffer.
@@ -230,7 +235,7 @@ impl<'r, R: Reader<'r>> NestedDecoder<R> {
             Err(Error::incomplete(self.position()))
         } else {
             // Create reader on peeked bytes
-            let peeked = self.inner.peek_bytes();
+            let peeked = self.peek_bytes();
             let mut decoder = SliceReader::new(peeked)?.root_nest();
             let header: Header = Header::decode(&mut decoder)?;
 

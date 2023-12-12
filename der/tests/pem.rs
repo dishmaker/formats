@@ -5,7 +5,7 @@
 use der::{
     asn1::{BitString, ObjectIdentifier},
     pem::{LineEnding, PemLabel},
-    Decode, DecodePem, EncodePem, Sequence,
+    Decode, DecodePem, Document, EncodePem, Length, Sequence,
 };
 
 /// Example SPKI document encoded as DER.
@@ -64,4 +64,20 @@ fn to_pem() {
     let spki = SpkiBorrowed::from_der(SPKI_DER).unwrap();
     let pem = spki.to_pem(LineEnding::LF).unwrap();
     assert_eq!(&pem, SPKI_PEM);
+}
+
+#[test]
+fn from_pem_peek() {
+    // Decode PEM to owned form.
+    let (_, pem_spki_doc) = Document::from_pem(SPKI_PEM).unwrap();
+
+    let doc = pem_spki_doc.as_bytes();
+    // SEQUENCE
+    assert_eq!(doc.get(0).cloned(), Some(0x30));
+    // length in DER
+    assert_eq!(doc.get(1).cloned(), Some(42));
+
+    // with header
+    assert_eq!(pem_spki_doc.len(), Length::new(42 + 2));
+    assert_eq!(doc.len(), 42 + 2);
 }
