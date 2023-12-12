@@ -16,23 +16,38 @@ pub struct NestedDecoder<R> {
     inner: R,
 
     /// Index of first byte that we can't read
-    end_pos: Length,
+    end_pos: Option<Length>,
 }
 
 impl<'r, R: Reader<'r>> NestedDecoder<R> {
-    /// Create a new nested reader which can read the given [`Length`].
-    pub(crate) fn new(inner: R, len: Length) -> Result<Self> {
-        Self::is_out_of_bounds(inner.readable(), len)?;
-
+    /// Create a new nested reader which can read at most the given [`Length`].
+    ///
+    /// Returns error immediately if the provided reader has fewer bytes.
+    pub fn new(inner: R, len: Length) -> Result<Self> {
         Ok(Self {
-            end_pos: (inner.position() + len)?,
+            end_pos: {
+                let new_end = Self::is_out_of_bounds(inner.readable(), len)?;
+                Some(new_end)
+            },
             inner,
         })
     }
 
+    /// Create a new nested reader without bounds
+    pub fn new_unchecked(inner: R) -> Self {
+        Self {
+            end_pos: None,
+            inner,
+        }
+    }
+
     /// Returns readable range of current nest (not the underlaying reader)
     fn readable(&self) -> Range<Length> {
-        self.inner.position()..self.end_pos
+        if let Some(end_pos) = self.end_pos {
+            self.inner.position()..end_pos
+        } else {
+            self.inner.readable()
+        }
     }
 
     /// Move the position cursor by the given length, returning an error if there
@@ -108,8 +123,12 @@ impl<'r, R: Reader<'r>> NestedDecoder<R> {
 
     /// Get the number of bytes still remaining in the buffer.
     pub fn remaining_len(&self) -> Length {
-        debug_assert!(self.end_pos >= self.position());
-        self.end_pos.saturating_sub(self.position())
+        if let Some(end_pos) = self.end_pos {
+            debug_assert!(end_pos >= self.position());
+            end_pos.saturating_sub(self.position())
+        } else {
+            self.inner.remaining_len()
+        }
     }
 
     /// Finish decoding, returning the given value if there is no
@@ -132,15 +151,15 @@ impl<'r, R: Reader<'r>> NestedDecoder<R> {
         F: FnOnce(&mut Self) -> Result<T>,
     {
         // Save current position
-        let old_end: Length = self.end_pos;
+        let old_end = self.end_pos;
 
         // Swap end boundary with current nest
         let nest_end = self.check_out_of_bounds(len)?;
-        self.end_pos = nest_end;
+        self.end_pos = Some(nest_end);
 
         let ret = f(self);
 
-        debug_assert!(self.end_pos == nest_end);
+        debug_assert!(self.end_pos == Some(nest_end));
 
         // Check remaining bytes before resetting nested position
         let result = self.finish(ret?);

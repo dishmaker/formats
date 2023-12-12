@@ -39,9 +39,7 @@ pub trait Reader<'r>: Sized {
 
     /// Creates initial nesting-checked decoder
     fn root_nest(self) -> NestedDecoder<Self> {
-        let len = self.remaining_len();
-        // Should never fail if reader impl is consistent
-        NestedDecoder::new(self, len).unwrap()
+        NestedDecoder::new_unchecked(self)
     }
 
     /// Returns current position and input length indices
