@@ -79,8 +79,6 @@ impl<'r, R: Reader<'r>> NestedDecoder<R> {
     /// - `Err(ErrorKind::Incomplete)` if there is not enough data
     /// - `Err(ErrorKind::Reader)` if the reader can't borrow from the input
     pub fn read_slice(&mut self, len: Length) -> Result<&'r [u8]> {
-        use std::println;
-        println!("read_slice {}", len);
         self.check_out_of_bounds(len)?;
         self.inner.read_slice(len)
     }
