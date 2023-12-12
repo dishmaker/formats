@@ -66,13 +66,7 @@ impl<'a, T, const N: usize> DecodeValue<'a> for SequenceOf<T, N>
 where
     T: Decode<'a>,
 {
-    fn decode_value<'i, R: Reader<'a>>(
-        reader: &mut NestedDecoder<'i, R>,
-        header: Header,
-    ) -> Result<Self>
-    where
-        'a: 'i,
-    {
+    fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<R>, header: Header) -> Result<Self> {
         reader.read_nested(header.length, |reader| {
             let mut sequence_of = Self::new();
 
@@ -137,13 +131,7 @@ impl<'a, T, const N: usize> DecodeValue<'a> for [T; N]
 where
     T: Decode<'a>,
 {
-    fn decode_value<'i, R: Reader<'a>>(
-        reader: &mut NestedDecoder<'i, R>,
-        header: Header,
-    ) -> Result<Self>
-    where
-        'a: 'i,
-    {
+    fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<R>, header: Header) -> Result<Self> {
         let sequence_of = SequenceOf::<T, N>::decode_value(reader, header)?;
 
         // TODO(tarcieri): use `[T; N]::try_map` instead of `expect` when stable
@@ -194,13 +182,7 @@ impl<'a, T> DecodeValue<'a> for Vec<T>
 where
     T: Decode<'a>,
 {
-    fn decode_value<'i, R: Reader<'a>>(
-        reader: &mut NestedDecoder<'i, R>,
-        header: Header,
-    ) -> Result<Self>
-    where
-        'a: 'i,
-    {
+    fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<R>, header: Header) -> Result<Self> {
         reader.read_nested(header.length, |reader| {
             let mut sequence_of = Self::new();
 

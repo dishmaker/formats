@@ -69,7 +69,7 @@ impl<'a> AnyRef<'a> {
             length: self.value.len(),
         };
 
-        let mut reader = SliceReader::new(self.value())?;
+        let reader = SliceReader::new(self.value())?;
         let mut decoder = reader.root_nest();
         let result = T::decode_value(&mut decoder, header)?;
         decoder.finish(result)
@@ -100,23 +100,14 @@ impl<'a> Choice<'a> for AnyRef<'a> {
 }
 
 impl<'a> Decode<'a> for AnyRef<'a> {
-    fn decode<'i, R: Reader<'a>>(reader: &mut NestedDecoder<'i, R>) -> Result<AnyRef<'a>>
-    where
-        'a: 'i,
-    {
+    fn decode<R: Reader<'a>>(reader: &mut NestedDecoder<R>) -> Result<AnyRef<'a>> {
         let header = Header::decode(reader)?;
         Self::decode_value(reader, header)
     }
 }
 
 impl<'a> DecodeValue<'a> for AnyRef<'a> {
-    fn decode_value<'i, R: Reader<'a>>(
-        reader: &mut NestedDecoder<'i, R>,
-        header: Header,
-    ) -> Result<Self>
-    where
-        'a: 'i,
-    {
+    fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<R>, header: Header) -> Result<Self> {
         Ok(Self {
             tag: header.tag,
             value: BytesRef::decode_value(reader, header)?,
@@ -244,23 +235,17 @@ mod allocating {
     }
 
     impl<'a> Decode<'a> for Any {
-        fn decode<'i, R: Reader<'a>>(reader: &mut NestedDecoder<'i, R>) -> Result<Self>
-        where
-            'a: 'i,
-        {
+        fn decode<R: Reader<'a>>(reader: &mut NestedDecoder<R>) -> Result<Self> {
             let header = Header::decode(reader)?;
             Self::decode_value(reader, header)
         }
     }
 
     impl<'a> DecodeValue<'a> for Any {
-        fn decode_value<'i, R: Reader<'a>>(
-            reader: &mut NestedDecoder<'i, R>,
+        fn decode_value<R: Reader<'a>>(
+            reader: &mut NestedDecoder<R>,
             header: Header,
-        ) -> Result<Self>
-        where
-            'a: 'i,
-        {
+        ) -> Result<Self> {
             let value = reader.read_vec(header.length)?;
             Self::new(header.tag, value)
         }

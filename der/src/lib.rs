@@ -95,7 +95,7 @@
 //! // "heapless" usage when the `alloc` feature is disabled.
 //! use der::{
 //!     asn1::{AnyRef, ObjectIdentifier},
-//!     DecodeValue, Decode, SliceReader, Encode, Header, Reader, Sequence
+//!     DecodeValue, Decode, SliceReader, Encode, Header, Reader, Sequence, NestedDecoder
 //! };
 //!
 //! /// X.509 `AlgorithmIdentifier`.
@@ -110,7 +110,7 @@
 //! }
 //!
 //! impl<'a> DecodeValue<'a> for AlgorithmIdentifier<'a> {
-//!     fn decode_value<R: Reader<'a>>(reader: &mut R, _header: Header) -> der::Result<Self> {
+//!     fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<R>, _header: Header) -> der::Result<Self> {
 //!        // The `der::Decoder::Decode` method can be used to decode any
 //!        // type which impls the `Decode` trait, which is impl'd for
 //!        // all of the ASN.1 built-in types in the `der` crate.

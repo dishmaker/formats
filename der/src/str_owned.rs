@@ -69,13 +69,7 @@ impl AsRef<[u8]> for StrOwned {
 }
 
 impl<'a> DecodeValue<'a> for StrOwned {
-    fn decode_value<'i, R: Reader<'a>>(
-        reader: &mut NestedDecoder<'i, R>,
-        header: Header,
-    ) -> Result<Self>
-    where
-        'a: 'i,
-    {
+    fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<R>, header: Header) -> Result<Self> {
         Self::from_bytes(BytesRef::decode_value(reader, header)?.as_slice())
     }
 }

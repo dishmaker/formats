@@ -54,13 +54,7 @@ impl AsRef<[u8]> for OctetStringRef<'_> {
 }
 
 impl<'a> DecodeValue<'a> for OctetStringRef<'a> {
-    fn decode_value<'i, R: Reader<'a>>(
-        reader: &mut NestedDecoder<'i, R>,
-        header: Header,
-    ) -> Result<Self>
-    where
-        'a: 'i,
-    {
+    fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<R>, header: Header) -> Result<Self> {
         let inner = BytesRef::decode_value(reader, header)?;
         Ok(Self { inner })
     }
@@ -162,13 +156,10 @@ mod allocating {
     }
 
     impl<'a> DecodeValue<'a> for OctetString {
-        fn decode_value<'i, R: Reader<'a>>(
-            reader: &mut NestedDecoder<'i, R>,
+        fn decode_value<R: Reader<'a>>(
+            reader: &mut NestedDecoder<R>,
             header: Header,
-        ) -> Result<Self>
-        where
-            'a: 'i,
-        {
+        ) -> Result<Self> {
             Self::new(reader.read_vec(header.length)?)
         }
     }
@@ -229,11 +220,17 @@ mod allocating {
 #[cfg(feature = "bytes")]
 mod bytes {
     use super::OctetString;
-    use crate::{DecodeValue, EncodeValue, FixedTag, Header, Length, Reader, Result, Tag, Writer};
+    use crate::{
+        DecodeValue, EncodeValue, FixedTag, Header, Length, NestedDecoder, Reader, Result, Tag,
+        Writer,
+    };
     use bytes::Bytes;
 
     impl<'a> DecodeValue<'a> for Bytes {
-        fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> Result<Self> {
+        fn decode_value<R: Reader<'a>>(
+            reader: &mut NestedDecoder<R>,
+            header: Header,
+        ) -> Result<Self> {
             OctetString::decode_value(reader, header).map(|octet_string| octet_string.inner.into())
         }
     }

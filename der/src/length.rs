@@ -209,10 +209,7 @@ impl TryFrom<Length> for usize {
 }
 
 impl<'a> Decode<'a> for Length {
-    fn decode<'i, R: Reader<'a>>(reader: &mut NestedDecoder<'i, R>) -> Result<Length>
-    where
-        'a: 'i,
-    {
+    fn decode<R: Reader<'a>>(reader: &mut NestedDecoder<R>) -> Result<Length> {
         match reader.read_byte()? {
             // Note: per X.690 Section 8.1.3.6.1 the byte 0x80 encodes indefinite
             // lengths, which are not allowed in DER, so disallow that byte.
@@ -220,7 +217,7 @@ impl<'a> Decode<'a> for Length {
             INDEFINITE_LENGTH_OCTET => Err(ErrorKind::IndefiniteLength.into()),
             // 1-4 byte variable-sized length prefix
             tag @ 0x81..=0x84 => {
-                let nbytes = tag.checked_sub(0x80).ok_or(ErrorKind::Overlength)? as usize;
+                let nbytes = tag & 0b01111111;
                 debug_assert!(nbytes <= 4);
 
                 let mut decoded_len = 0u32;
@@ -361,10 +358,7 @@ impl IndefiniteLength {
 }
 
 impl<'a> Decode<'a> for IndefiniteLength {
-    fn decode<'i, R: Reader<'a>>(reader: &mut NestedDecoder<'i, R>) -> Result<IndefiniteLength>
-    where
-        'a: 'i,
-    {
+    fn decode<R: Reader<'a>>(reader: &mut NestedDecoder<R>) -> Result<IndefiniteLength> {
         if reader.peek_byte() == Some(INDEFINITE_LENGTH_OCTET) {
             // Consume the byte we already peeked at.
             let byte = reader.read_byte()?;

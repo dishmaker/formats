@@ -45,13 +45,15 @@ mod ordering {
     /// sets in order to match the behavior of other implementations.
     #[test]
     fn allow_out_of_order_setof() {
-        assert!(SetOf::<AttributeTypeAndValue<'_>, 2>::from_der(OUT_OF_ORDER_RDN_EXAMPLE).is_ok());
+        SetOf::<AttributeTypeAndValue<'_>, 2>::from_der(OUT_OF_ORDER_RDN_EXAMPLE)
+            .expect("out of order set should be allowed");
     }
 
     /// Same as above, with `SetOfVec` instead of `SetOf`.
     #[test]
     fn allow_out_of_order_setofvec() {
-        assert!(SetOfVec::<AttributeTypeAndValue<'_>>::from_der(OUT_OF_ORDER_RDN_EXAMPLE).is_ok());
+        SetOfVec::<AttributeTypeAndValue<'_>>::from_der(OUT_OF_ORDER_RDN_EXAMPLE)
+            .expect("out of order set should be allowed");
     }
 
     /// Test to ensure ordering is handled correctly.

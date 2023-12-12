@@ -12,13 +12,7 @@ pub struct Null;
 impl_any_conversions!(Null);
 
 impl<'a> DecodeValue<'a> for Null {
-    fn decode_value<'i, R: Reader<'a>>(
-        reader: &mut NestedDecoder<'i, R>,
-        header: Header,
-    ) -> Result<Self>
-    where
-        'a: 'i,
-    {
+    fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<R>, header: Header) -> Result<Self> {
         if header.length.is_zero() {
             Ok(Null)
         } else {
@@ -64,13 +58,7 @@ impl<'a> From<()> for AnyRef<'a> {
 }
 
 impl<'a> DecodeValue<'a> for () {
-    fn decode_value<'i, R: Reader<'a>>(
-        reader: &mut NestedDecoder<'i, R>,
-        header: Header,
-    ) -> Result<Self>
-    where
-        'a: 'i,
-    {
+    fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<R>, header: Header) -> Result<Self> {
         Null::decode_value(reader, header)?;
         Ok(())
     }

@@ -53,13 +53,7 @@ impl AsRef<[u8]> for BytesOwned {
 }
 
 impl<'a> DecodeValue<'a> for BytesOwned {
-    fn decode_value<'i, R: Reader<'a>>(
-        reader: &mut NestedDecoder<'i, R>,
-        header: Header,
-    ) -> Result<Self>
-    where
-        'a: 'i,
-    {
+    fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<R>, header: Header) -> Result<Self> {
         reader.read_vec(header.length).and_then(Self::new)
     }
 }

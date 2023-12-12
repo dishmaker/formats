@@ -78,13 +78,7 @@ impl GeneralizedTime {
 impl_any_conversions!(GeneralizedTime);
 
 impl<'a> DecodeValue<'a> for GeneralizedTime {
-    fn decode_value<'i, R: Reader<'a>>(
-        reader: &mut NestedDecoder<'i, R>,
-        header: Header,
-    ) -> Result<Self>
-    where
-        'a: 'i,
-    {
+    fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<R>, header: Header) -> Result<Self> {
         if Self::LENGTH != usize::try_from(header.length)? {
             return Err(Self::TAG.value_error());
         }
@@ -173,13 +167,7 @@ impl From<&DateTime> for GeneralizedTime {
 }
 
 impl<'a> DecodeValue<'a> for DateTime {
-    fn decode_value<'i, R: Reader<'a>>(
-        reader: &mut NestedDecoder<'i, R>,
-        header: Header,
-    ) -> Result<Self>
-    where
-        'a: 'i,
-    {
+    fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<R>, header: Header) -> Result<Self> {
         Ok(GeneralizedTime::decode_value(reader, header)?.into())
     }
 }
@@ -202,13 +190,7 @@ impl OrdIsValueOrd for DateTime {}
 
 #[cfg(feature = "std")]
 impl<'a> DecodeValue<'a> for SystemTime {
-    fn decode_value<'i, R: Reader<'a>>(
-        reader: &mut NestedDecoder<'i, R>,
-        header: Header,
-    ) -> Result<Self>
-    where
-        'a: 'i,
-    {
+    fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<R>, header: Header) -> Result<Self> {
         Ok(GeneralizedTime::decode_value(reader, header)?.into())
     }
 }

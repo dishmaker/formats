@@ -10,13 +10,7 @@ use const_oid::ObjectIdentifier;
 use super::Any;
 
 impl<'a> DecodeValue<'a> for ObjectIdentifier {
-    fn decode_value<'i, R: Reader<'a>>(
-        reader: &mut NestedDecoder<'i, R>,
-        header: Header,
-    ) -> Result<Self>
-    where
-        'a: 'i,
-    {
+    fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<R>, header: Header) -> Result<Self> {
         let mut buf = [0u8; ObjectIdentifier::MAX_SIZE];
         let slice = buf
             .get_mut(..header.length.try_into()?)

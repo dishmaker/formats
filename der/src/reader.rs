@@ -9,15 +9,15 @@ use core::ops::Range;
 
 pub(crate) use nested::NestedDecoder;
 
-use crate::{Error, ErrorKind, Length, Result, Tag};
+use crate::{Error, ErrorKind, Length, Result};
 
 /// Reader trait which reads DER-encoded input.
-pub trait Reader<'r>: Sized + Clone {
+pub trait Reader<'r>: Sized {
     /// Get the length of the input.
     fn input_len(&self) -> Length;
 
-    /// Peek at the next byte of input without modifying the cursor.
-    fn peek_byte(&self) -> Option<u8>;
+    /// Peek at most 8 bytes (3 byte tag + 5 length)
+    fn peek_bytes(&self) -> &[u8];
 
     // /// Peek forward in the input data, attempting to decode a [`Header`] from
     // /// the data at the current position in the decoder.
@@ -37,11 +37,8 @@ pub trait Reader<'r>: Sized + Clone {
     /// - `Err(ErrorKind::Reader)` if the reader can't borrow from the input
     fn read_slice(&mut self, len: Length) -> Result<&'r [u8]>;
 
-    /// Creates first bounds check
-    fn root_nest<'a>(&'a mut self) -> NestedDecoder<'a, Self>
-    where
-        'r: 'a,
-    {
+    /// Creates initial nesting-checked decoder
+    fn root_nest(self) -> NestedDecoder<Self> {
         let len = self.remaining_len();
         // Should never fail if reader impl is consistent
         NestedDecoder::new(self, len).unwrap()
@@ -75,17 +72,6 @@ pub trait Reader<'r>: Sized + Clone {
     /// Have we read all of the input data?
     fn is_finished(&self) -> bool {
         self.remaining_len().is_zero()
-    }
-
-    /// Peek at the next byte in the decoder and attempt to decode it as a
-    /// [`Tag`] value.
-    ///
-    /// Does not modify the decoder's state.
-    fn peek_tag(&self) -> Result<Tag> {
-        match self.peek_byte() {
-            Some(byte) => byte.try_into(),
-            None => Err(Error::incomplete(self.input_len())),
-        }
     }
 
     /// Attempt to read input data, writing it into the provided buffer, and

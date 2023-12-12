@@ -2,14 +2,12 @@
 
 use super::Reader;
 use crate::{ErrorKind, Length, Result};
-use core::cell::RefCell;
 
 #[allow(clippy::arithmetic_side_effects)]
 mod utils {
     use crate::{Error, Length, Result};
     use pem_rfc7468::Decoder;
 
-    #[derive(Clone)]
     pub(super) struct BufReader<'i> {
         /// Inner PEM decoder.
         decoder: Decoder<'i>,
@@ -29,6 +27,9 @@ mod utils {
 
     impl<'i> BufReader<'i> {
         const CAPACITY: usize = 256;
+
+        /// Also the maxmimum return value for a single peek
+        const MINIMUM_BUFFERED: u8 = 8;
 
         pub fn new(pem: &'i [u8]) -> Result<Self> {
             let decoder = Decoder::new(pem)?;
@@ -86,12 +87,15 @@ mod utils {
         fn as_slice(&self) -> &[u8] {
             &self.buf[self.pos..self.cap]
         }
+
+        fn fully_peekable(&self) -> bool {
+            self.as_slice().len() >= BufReader::MINIMUM_BUFFERED as usize
+        }
     }
 
     impl<'i> BufReader<'i> {
-        pub fn peek_byte(&self) -> Option<u8> {
-            let s = self.as_slice();
-            s.first().copied()
+        pub fn peek_bytes(&self) -> &[u8] {
+            self.as_slice()
         }
 
         pub fn copy_to_slice<'o>(&mut self, buf: &'o mut [u8]) -> Result<&'o [u8]> {
@@ -112,7 +116,7 @@ mod utils {
             }
 
             // Don't leave the read buffer empty for peek_byte()
-            if self.is_empty() && self.decoder.remaining_len() != 0 {
+            if !self.fully_peekable() && self.decoder.remaining_len() != 0 {
                 self.fill_buffer()?
             }
 
@@ -125,10 +129,9 @@ mod utils {
 
 /// `Reader` type which decodes PEM on-the-fly.
 #[cfg(feature = "pem")]
-#[derive(Clone)]
 pub struct PemReader<'i> {
     /// Inner PEM decoder wrapped in a BufReader.
-    reader: RefCell<utils::BufReader<'i>>,
+    reader: utils::BufReader<'i>,
 
     /// Input length (in bytes after Base64 decoding).
     input_len: Length,
@@ -147,7 +150,7 @@ impl<'i> PemReader<'i> {
         let input_len = Length::try_from(reader.remaining_len())?;
 
         Ok(Self {
-            reader: RefCell::new(reader),
+            reader,
             input_len,
             position: Length::ZERO,
         })
@@ -156,7 +159,7 @@ impl<'i> PemReader<'i> {
     /// Get the PEM label which will be used in the encapsulation boundaries
     /// for this document.
     pub fn type_label(&self) -> &'i str {
-        self.reader.borrow().type_label()
+        self.reader.type_label()
     }
 }
 
@@ -166,21 +169,16 @@ impl<'i> Reader<'i> for PemReader<'i> {
         self.input_len
     }
 
-    fn peek_byte(&self) -> Option<u8> {
+    fn peek_bytes(&self) -> &[u8] {
         if self.is_finished() {
-            None
+            &[]
         } else {
-            self.reader.borrow().peek_byte()
+            let peeked = self.reader.peek_bytes();
+
+            // Returns at most 8 bytes
+            peeked.get(..peeked.len().min(8)).unwrap_or_default()
         }
     }
-
-    // fn peek_header(&self) -> Result<Header> {
-    //     if self.is_finished() {
-    //         Err(Error::incomplete(self.offset()))
-    //     } else {
-    //         Header::decode(&mut self.clone().root_nest())
-    //     }
-    // }
 
     fn position(&self) -> Length {
         self.position
@@ -192,13 +190,13 @@ impl<'i> Reader<'i> for PemReader<'i> {
     }
 
     fn read_into<'o>(&mut self, buf: &'o mut [u8]) -> Result<&'o [u8]> {
-        let bytes = self.reader.borrow_mut().copy_to_slice(buf)?;
+        let bytes = self.reader.copy_to_slice(buf)?;
 
         self.position = (self.position + bytes.len())?;
 
         debug_assert_eq!(
             self.position,
-            (self.input_len - Length::try_from(self.reader.borrow().remaining_len())?)?
+            (self.input_len - Length::try_from(self.reader.remaining_len())?)?
         );
 
         Ok(bytes)

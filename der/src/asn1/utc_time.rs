@@ -82,13 +82,7 @@ impl UtcTime {
 impl_any_conversions!(UtcTime);
 
 impl<'a> DecodeValue<'a> for UtcTime {
-    fn decode_value<'i, R: Reader<'a>>(
-        reader: &mut NestedDecoder<'i, R>,
-        header: Header,
-    ) -> Result<Self>
-    where
-        'a: 'i,
-    {
+    fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<R>, header: Header) -> Result<Self> {
         if Self::LENGTH != usize::try_from(header.length)? {
             return Err(Self::TAG.value_error());
         }

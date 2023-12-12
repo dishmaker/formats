@@ -34,13 +34,7 @@ pub struct SequenceRef<'a> {
 }
 
 impl<'a> DecodeValue<'a> for SequenceRef<'a> {
-    fn decode_value<'i, R: Reader<'a>>(
-        reader: &mut NestedDecoder<'i, R>,
-        header: Header,
-    ) -> Result<Self>
-    where
-        'a: 'i,
-    {
+    fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<R>, header: Header) -> Result<Self> {
         Ok(Self {
             body: BytesRef::decode_value(reader, header)?,
         })

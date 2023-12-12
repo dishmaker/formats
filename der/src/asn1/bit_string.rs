@@ -120,13 +120,7 @@ impl<'a> BitStringRef<'a> {
 impl_any_conversions!(BitStringRef<'a>, 'a);
 
 impl<'a> DecodeValue<'a> for BitStringRef<'a> {
-    fn decode_value<'i, R: Reader<'a>>(
-        reader: &mut NestedDecoder<'i, R>,
-        header: Header,
-    ) -> Result<Self>
-    where
-        'a: 'i,
-    {
+    fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<R>, header: Header) -> Result<Self> {
         let header = Header {
             tag: header.tag,
             length: (header.length - Length::ONE)?,
@@ -315,13 +309,10 @@ mod allocating {
     impl_any_conversions!(BitString);
 
     impl<'a> DecodeValue<'a> for BitString {
-        fn decode_value<'i, R: Reader<'a>>(
-            reader: &mut NestedDecoder<'i, R>,
+        fn decode_value<R: Reader<'a>>(
+            reader: &mut NestedDecoder<R>,
             header: Header,
-        ) -> Result<Self>
-        where
-            'a: 'i,
-        {
+        ) -> Result<Self> {
             let inner_len = (header.length - Length::ONE)?;
             let unused_bits = reader.read_byte()?;
             let inner = reader.read_vec(inner_len)?;
@@ -454,13 +445,7 @@ where
     T::Type: From<bool>,
     T::Type: core::ops::Shl<usize, Output = T::Type>,
 {
-    fn decode_value<'i, R: Reader<'a>>(
-        reader: &mut NestedDecoder<'i, R>,
-        header: Header,
-    ) -> Result<Self>
-    where
-        'a: 'i,
-    {
+    fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<R>, header: Header) -> Result<Self> {
         let position = reader.position();
         let bits = BitStringRef::decode_value(reader, header)?;
 

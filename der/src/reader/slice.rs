@@ -61,10 +61,11 @@ impl<'a> Reader<'a> for SliceReader<'a> {
         self.bytes.len()
     }
 
-    fn peek_byte(&self) -> Option<u8> {
+    fn peek_bytes(&self) -> &[u8] {
         self.remaining()
             .ok()
-            .and_then(|bytes| bytes.first().cloned())
+            .and_then(|bytes| bytes.get(..bytes.len().min(8)))
+            .unwrap_or_default()
     }
 
     fn position(&self) -> Length {
@@ -136,9 +137,9 @@ mod tests {
 
     #[test]
     fn empty_message() {
-        let mut reader = SliceReader::new(&[]).unwrap();
-        let mut reader = reader.root_nest();
-        let err = bool::decode(&mut reader).err().unwrap();
+        let reader = SliceReader::new(&[]).unwrap();
+        let mut decoder = reader.root_nest();
+        let err = bool::decode(&mut decoder).err().unwrap();
         assert_eq!(Some(Length::ZERO), err.position());
 
         match err.kind() {
@@ -157,9 +158,9 @@ mod tests {
     fn invalid_field_length() {
         const MSG_LEN: usize = 2;
 
-        let mut reader = SliceReader::new(&EXAMPLE_MSG[..MSG_LEN]).unwrap();
-        let mut reader = reader.root_nest();
-        let err = i8::decode(&mut reader).err().unwrap();
+        let reader = SliceReader::new(&EXAMPLE_MSG[..MSG_LEN]).unwrap();
+        let mut decoder = reader.root_nest();
+        let err = i8::decode(&mut decoder).err().unwrap();
         assert_eq!(Some(Length::from(2u8)), err.position());
 
         match err.kind() {
@@ -176,12 +177,12 @@ mod tests {
 
     #[test]
     fn trailing_data() {
-        let mut reader = SliceReader::new(EXAMPLE_MSG).unwrap();
-        let mut reader = reader.root_nest();
-        let x = i8::decode(&mut reader).unwrap();
+        let reader = SliceReader::new(EXAMPLE_MSG).unwrap();
+        let mut decoder = reader.root_nest();
+        let x = i8::decode(&mut decoder).unwrap();
         assert_eq!(42i8, x);
 
-        let err = reader.finish(x).err().unwrap();
+        let err = decoder.finish(x).err().unwrap();
         assert_eq!(Some(Length::from(3u8)), err.position());
 
         assert_eq!(
@@ -196,20 +197,21 @@ mod tests {
     #[test]
     fn peek_tag() {
         let reader = SliceReader::new(EXAMPLE_MSG).unwrap();
-        assert_eq!(reader.position(), Length::ZERO);
-        assert_eq!(reader.peek_tag().unwrap(), Tag::Integer);
-        assert_eq!(reader.position(), Length::ZERO); // Position unchanged
+        let decoder = reader.root_nest();
+        assert_eq!(decoder.position(), Length::ZERO);
+        assert_eq!(decoder.peek_tag().unwrap(), Tag::Integer);
+        assert_eq!(decoder.position(), Length::ZERO); // Position unchanged
     }
 
     #[test]
     fn peek_header() {
-        let mut reader = SliceReader::new(EXAMPLE_MSG).unwrap();
-        let reader = reader.root_nest();
-        assert_eq!(reader.position(), Length::ZERO);
+        let reader = SliceReader::new(EXAMPLE_MSG).unwrap();
+        let decoder = reader.root_nest();
+        assert_eq!(decoder.position(), Length::ZERO);
 
-        let header = reader.peek_header().unwrap();
+        let header = decoder.peek_header().unwrap();
         assert_eq!(header.tag, Tag::Integer);
         assert_eq!(header.length, Length::ONE);
-        assert_eq!(reader.position(), Length::ZERO); // Position unchanged
+        assert_eq!(decoder.position(), Length::ZERO); // Position unchanged
     }
 }

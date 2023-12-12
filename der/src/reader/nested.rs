@@ -4,27 +4,24 @@ use core::ops::Range;
 
 use crate::{
     asn1::ContextSpecific, reader::Reader, Decode, DecodeValue, Encode, Error, ErrorKind, FixedTag,
-    Header, Length, Result, Tag, TagMode, TagNumber,
+    Header, Length, Result, SliceReader, Tag, TagMode, TagNumber,
 };
 
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
 
 /// Reader type used by [`Reader::read_nested`].
-pub struct NestedDecoder<'i, R> {
+pub struct NestedDecoder<R> {
     /// Inner reader type.
-    inner: &'i mut R,
+    inner: R,
 
     /// Index of first byte that we can't read
     end_pos: Length,
 }
 
-impl<'i, 'r, R: Reader<'r>> NestedDecoder<'i, R>
-where
-    'r: 'i,
-{
+impl<'r, R: Reader<'r>> NestedDecoder<R> {
     /// Create a new nested reader which can read the given [`Length`].
-    pub(crate) fn new(inner: &'i mut R, len: Length) -> Result<Self> {
+    pub(crate) fn new(inner: R, len: Length) -> Result<Self> {
         Self::is_out_of_bounds(inner.readable(), len)?;
 
         Ok(Self {
@@ -42,7 +39,7 @@ where
     /// isn't enough remaining data in the nested input.
     ///
     /// Returns: new end position
-    fn check_out_of_bounds(&mut self, len: Length) -> Result<Length> {
+    fn check_out_of_bounds(&self, len: Length) -> Result<Length> {
         Self::is_out_of_bounds(self.readable(), len)
     }
 
@@ -65,7 +62,7 @@ where
         if self.is_finished() {
             None
         } else {
-            self.inner.peek_byte()
+            self.inner.peek_bytes().get(0).cloned()
         }
     }
 
@@ -82,6 +79,8 @@ where
     /// - `Err(ErrorKind::Incomplete)` if there is not enough data
     /// - `Err(ErrorKind::Reader)` if the reader can't borrow from the input
     pub fn read_slice(&mut self, len: Length) -> Result<&'r [u8]> {
+        use std::println;
+        println!("read_slice {}", len);
         self.check_out_of_bounds(len)?;
         self.inner.read_slice(len)
     }
@@ -138,14 +137,20 @@ where
         let old_end: Length = self.end_pos;
 
         // Swap end boundary with current nest
-        self.end_pos = self.check_out_of_bounds(len)?;
+        let nest_end = self.check_out_of_bounds(len)?;
+        self.end_pos = nest_end;
 
         let ret = f(self);
+
+        debug_assert!(self.end_pos == nest_end);
+
+        // Check remaining bytes before resetting nested position
+        let result = self.finish(ret?);
+
         // Revert end position
         self.end_pos = old_end;
 
-        // Return errors after resetting nested position
-        self.finish(ret?)
+        result
     }
 
     /// Read an ASN.1 `SEQUENCE`, creating a nested [`Reader`] for the body and
@@ -191,16 +196,30 @@ where
         Ok(buf[0])
     }
 
+    /// Peek at the next byte in the decoder and attempt to decode it as a
+    /// [`Tag`] value.
+    ///
+    /// Does not modify the decoder's state.
+    pub fn peek_tag(&self) -> Result<Tag> {
+        match self.peek_byte() {
+            Some(byte) => byte.try_into(),
+            None => Err(Error::incomplete(self.inner.input_len())),
+        }
+    }
+
     /// Reads header on a cloned reader, so it's position will not be changed
     pub fn peek_header(&self) -> Result<Header> {
         if self.is_finished() {
             Err(Error::incomplete(self.position()))
         } else {
-            // TODO(tarcieri): handle peeking past nested length
-            // probably done
-            let mut reader = self.inner.clone();
-            let mut decoder = NestedDecoder::new(&mut reader, self.end_pos)?;
-            Header::decode(&mut decoder)
+            let mut decoder = SliceReader::new(self.inner.peek_bytes())?.root_nest();
+            let header: Header = Header::decode(&mut decoder)?;
+
+            // Length of header is equal to number of bytes the reader advanced
+            let header_len = decoder.position();
+            self.check_out_of_bounds(header_len)?;
+
+            Ok(header)
         }
     }
 
@@ -213,6 +232,6 @@ where
 
     /// Decode a value which impls the [`Decode`] trait.
     pub fn decode<T: Decode<'r>>(&mut self) -> Result<T> {
-        T::decode(self).map_err(|e| e.nested(self.position()))
+        T::decode(self)
     }
 }

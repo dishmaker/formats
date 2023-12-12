@@ -118,9 +118,10 @@ impl DeriveEnumerated {
         quote! {
             impl<#default_lifetime> ::der::DecodeValue<#default_lifetime> for #ident {
                 fn decode_value<R: ::der::Reader<#default_lifetime>>(
-                    reader: &mut R,
+                    reader: &mut ::der::NestedDecoder<R>,
                     header: ::der::Header
-                ) -> ::der::Result<Self> {
+                ) -> ::der::Result<Self> 
+                {
                     <#repr as ::der::DecodeValue>::decode_value(reader, header)?.try_into()
                 }
             }

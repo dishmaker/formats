@@ -317,10 +317,7 @@ impl From<&Tag> for u8 {
 }
 
 impl<'a> Decode<'a> for Tag {
-    fn decode<'i, R: Reader<'a>>(reader: &mut NestedDecoder<'i, R>) -> Result<Self>
-    where
-        'a: 'i,
-    {
+    fn decode<R: Reader<'a>>(reader: &mut NestedDecoder<R>) -> Result<Self> {
         reader.read_byte().and_then(Self::try_from)
     }
 }

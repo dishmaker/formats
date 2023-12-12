@@ -15,13 +15,7 @@ const TRUE_OCTET: u8 = 0b11111111;
 const FALSE_OCTET: u8 = 0b00000000;
 
 impl<'a> DecodeValue<'a> for bool {
-    fn decode_value<'i, R: Reader<'a>>(
-        reader: &mut NestedDecoder<'i, R>,
-        header: Header,
-    ) -> Result<Self>
-    where
-        'a: 'i,
-    {
+    fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<R>, header: Header) -> Result<Self> {
         if header.length != Length::ONE {
             return Err(reader.error(ErrorKind::Length { tag: Self::TAG }));
         }

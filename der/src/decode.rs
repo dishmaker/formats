@@ -18,15 +18,12 @@ use alloc::boxed::Box;
 /// are based.
 pub trait Decode<'a>: Sized {
     /// Attempt to decode this message using the provided decoder.
-    fn decode<'i, R: Reader<'a>>(decoder: &mut NestedDecoder<'i, R>) -> Result<Self>
-    where
-        'a: 'i;
+    fn decode<R: Reader<'a>>(decoder: &mut NestedDecoder<R>) -> Result<Self>;
 
     /// Parse `Self` from the provided DER-encoded byte slice.
     fn from_der(bytes: &'a [u8]) -> Result<Self> {
-        let mut reader = SliceReader::new(bytes)?;
-        let len = reader.input_len();
-        let mut decoder = NestedDecoder::new(&mut reader, len)?;
+        let reader = SliceReader::new(bytes)?;
+        let mut decoder = reader.root_nest();
 
         let result = Self::decode(&mut decoder)?;
         decoder.finish(result)
@@ -37,10 +34,7 @@ impl<'a, T> Decode<'a> for T
 where
     T: DecodeValue<'a> + FixedTag,
 {
-    fn decode<'i, R: Reader<'a>>(decoder: &mut NestedDecoder<'i, R>) -> Result<T>
-    where
-        'a: 'i,
-    {
+    fn decode<R: Reader<'a>>(decoder: &mut NestedDecoder<R>) -> Result<T> {
         let header = Header::decode(decoder)?;
         header.tag.assert_eq(T::TAG)?;
         T::decode_value(decoder, header)
@@ -53,10 +47,7 @@ impl<'a, T> Decode<'a> for PhantomData<T>
 where
     T: ?Sized,
 {
-    fn decode<'i, R: Reader<'a>>(_reader: &mut NestedDecoder<'i, R>) -> Result<PhantomData<T>>
-    where
-        'a: 'i,
-    {
+    fn decode<R: Reader<'a>>(_reader: &mut NestedDecoder<R>) -> Result<PhantomData<T>> {
         Ok(PhantomData)
     }
 }
@@ -86,7 +77,7 @@ pub trait DecodePem: DecodeOwned + PemLabel {
 #[cfg(feature = "pem")]
 impl<T: DecodeOwned + PemLabel> DecodePem for T {
     fn from_pem(pem: impl AsRef<[u8]>) -> Result<Self> {
-        let mut reader = PemReader::new(pem.as_ref())?;
+        let reader = PemReader::new(pem.as_ref())?;
         Self::validate_pem_label(reader.type_label())?;
         let mut decoder = reader.root_nest();
         T::decode(&mut decoder)
@@ -97,12 +88,7 @@ impl<T: DecodeOwned + PemLabel> DecodePem for T {
 /// and [`Length`].
 pub trait DecodeValue<'a>: Sized {
     /// Attempt to decode this message using the provided [`Reader`].
-    fn decode_value<'i, R: Reader<'a>>(
-        decoder: &mut NestedDecoder<'i, R>,
-        header: Header,
-    ) -> Result<Self>
-    where
-        'a: 'i;
+    fn decode_value<R: Reader<'a>>(decoder: &mut NestedDecoder<R>, header: Header) -> Result<Self>;
 }
 
 #[cfg(feature = "alloc")]
@@ -110,13 +96,7 @@ impl<'a, T> DecodeValue<'a> for Box<T>
 where
     T: DecodeValue<'a>,
 {
-    fn decode_value<'i, R: Reader<'a>>(
-        reader: &mut NestedDecoder<'i, R>,
-        header: Header,
-    ) -> Result<Self>
-    where
-        'a: 'i,
-    {
+    fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<R>, header: Header) -> Result<Self> {
         Ok(Box::new(T::decode_value(reader, header)?))
     }
 }

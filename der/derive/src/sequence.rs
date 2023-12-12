@@ -87,9 +87,10 @@ impl DeriveSequence {
         quote! {
             impl #impl_generics ::der::DecodeValue<#lifetime> for #ident #ty_generics #where_clause {
                 fn decode_value<R: ::der::Reader<#lifetime>>(
-                    reader: &mut R,
+                    reader: &mut ::der::NestedDecoder<R>,
                     header: ::der::Header,
-                ) -> ::der::Result<Self> {
+                ) -> ::der::Result<Self> 
+                {
                     use ::der::{Decode as _, DecodeValue as _, Reader as _};
 
                     reader.read_nested(header.length, |reader| {

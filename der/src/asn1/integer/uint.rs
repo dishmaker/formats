@@ -14,9 +14,7 @@ macro_rules! impl_encoding_traits {
     ($($uint:ty),+) => {
         $(
             impl<'a> DecodeValue<'a> for $uint {
-                fn decode_value<'i, R: Reader<'a>>(reader: &mut NestedDecoder<'i, R>, header: Header) -> Result<Self>
-                where
-                    'a: 'i {
+                fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<R>, header: Header) -> Result<Self> {
                     // Integers always encodes as a signed value, unsigned gets a leading 0x00 that
                     // needs to be stripped off. We need to provide room for it.
                     const UNSIGNED_HEADROOM: usize = 1;
@@ -116,13 +114,7 @@ impl<'a> UintRef<'a> {
 impl_any_conversions!(UintRef<'a>, 'a);
 
 impl<'a> DecodeValue<'a> for UintRef<'a> {
-    fn decode_value<'i, R: Reader<'a>>(
-        reader: &mut NestedDecoder<'i, R>,
-        header: Header,
-    ) -> Result<Self>
-    where
-        'a: 'i,
-    {
+    fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<R>, header: Header) -> Result<Self> {
         let bytes = BytesRef::decode_value(reader, header)?.as_slice();
         let result = Self::new(decode_to_slice(bytes)?)?;
 
@@ -214,13 +206,10 @@ mod allocating {
     impl_any_conversions!(Uint);
 
     impl<'a> DecodeValue<'a> for Uint {
-        fn decode_value<'i, R: Reader<'a>>(
-            reader: &mut NestedDecoder<'i, R>,
+        fn decode_value<R: Reader<'a>>(
+            reader: &mut NestedDecoder<R>,
             header: Header,
-        ) -> Result<Self>
-        where
-            'a: 'i,
-        {
+        ) -> Result<Self> {
             let bytes = BytesOwned::decode_value(reader, header)?;
             let result = Self::new(decode_to_slice(bytes.as_slice())?)?;
 

@@ -108,13 +108,7 @@ impl<'a, T, const N: usize> DecodeValue<'a> for SetOf<T, N>
 where
     T: Decode<'a> + DerOrd,
 {
-    fn decode_value<'i, R: Reader<'a>>(
-        reader: &mut NestedDecoder<'i, R>,
-        header: Header,
-    ) -> Result<Self>
-    where
-        'a: 'i,
-    {
+    fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<R>, header: Header) -> Result<Self> {
         reader.read_nested(header.length, |reader| {
             let mut result = Self::new();
 
@@ -332,13 +326,7 @@ impl<'a, T> DecodeValue<'a> for SetOfVec<T>
 where
     T: Decode<'a> + DerOrd,
 {
-    fn decode_value<'i, R: Reader<'a>>(
-        reader: &mut NestedDecoder<'i, R>,
-        header: Header,
-    ) -> Result<Self>
-    where
-        'a: 'i,
-    {
+    fn decode_value<R: Reader<'a>>(reader: &mut NestedDecoder<R>, header: Header) -> Result<Self> {
         reader.read_nested(header.length, |reader| {
             let mut inner = Vec::new();
 

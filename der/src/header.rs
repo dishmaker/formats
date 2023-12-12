@@ -26,10 +26,7 @@ impl Header {
 }
 
 impl<'a> Decode<'a> for Header {
-    fn decode<'i, R: Reader<'a>>(reader: &mut NestedDecoder<'i, R>) -> Result<Header>
-    where
-        'a: 'i,
-    {
+    fn decode<R: Reader<'a>>(reader: &mut NestedDecoder<R>) -> Result<Header> {
         let tag = Tag::decode(reader)?;
 
         let length = Length::decode(reader).map_err(|e| {

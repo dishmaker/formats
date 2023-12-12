@@ -7,10 +7,7 @@ impl<'a, T> Decode<'a> for Option<T>
 where
     T: Choice<'a>, // NOTE: all `Decode + Tagged` types receive a blanket `Choice` impl
 {
-    fn decode<'i, R: Reader<'a>>(reader: &mut NestedDecoder<'i, R>) -> Result<Option<T>>
-    where
-        'a: 'i,
-    {
+    fn decode<R: Reader<'a>>(reader: &mut NestedDecoder<R>) -> Result<Option<T>> {
         if let Some(byte) = reader.peek_byte() {
             if T::can_decode(Tag::try_from(byte)?) {
                 return T::decode(reader).map(Some);

@@ -144,10 +144,7 @@ impl Debug for Document {
 }
 
 impl<'a> Decode<'a> for Document {
-    fn decode<'i, R: Reader<'a>>(reader: &mut NestedDecoder<'i, R>) -> Result<Document>
-    where
-        'a: 'i,
-    {
+    fn decode<R: Reader<'a>>(reader: &mut NestedDecoder<R>) -> Result<Document> {
         let header = reader.peek_header()?;
         let length = (header.encoded_len()? + header.length)?;
         let bytes = reader.read_slice(length)?;
@@ -185,7 +182,7 @@ impl TryFrom<Vec<u8>> for Document {
     type Error = Error;
 
     fn try_from(der_bytes: Vec<u8>) -> Result<Self> {
-        let mut reader = SliceReader::new(&der_bytes)?;
+        let reader = SliceReader::new(&der_bytes)?;
         let mut decoder = reader.root_nest();
         decode_sequence(&mut decoder)?;
         decoder.finish(())?;
@@ -323,7 +320,7 @@ impl ZeroizeOnDrop for SecretDocument {}
 
 /// Attempt to decode a ASN.1 `SEQUENCE` from the given decoder, returning the
 /// entire sequence including the header.
-fn decode_sequence<'a, R: Reader<'a>>(decoder: &mut NestedDecoder<'a, R>) -> Result<&'a [u8]> {
+fn decode_sequence<'a, R: Reader<'a>>(decoder: &mut NestedDecoder<R>) -> Result<&'a [u8]> {
     let header = decoder.peek_header()?;
     header.tag.assert_eq(Tag::Sequence)?;
 
