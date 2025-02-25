@@ -91,7 +91,11 @@ pub(crate) struct FieldAttrs {
     /// Value of the `#[asn1(type = "...")]` attribute if provided.
     pub asn1_type: Option<Asn1Type>,
 
-    /// Value of the `#[asn1(context_specific = "...")] attribute if provided.
+    /// Value of either:
+    /// - `#[asn1(context_specific = "...")]`
+    /// - `#[asn1(private = "...")]`
+    /// - `#[asn1(application = "...")]`
+    /// attribute if provided.
     pub class: Option<ClassNum>,
 
     /// Indicates name of function that supplies the default value, which will be used in cases
@@ -414,6 +418,7 @@ impl AttrNameValue {
     }
 }
 
+/// Class and TagNumber
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum ClassNum {
     ContextSpecific(TagNumber),
