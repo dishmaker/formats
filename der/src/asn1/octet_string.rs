@@ -139,7 +139,6 @@ impl<'a, const N: usize> TryFrom<OctetStringRef<'a>> for [u8; N] {
     }
 }
 
-
 #[cfg(feature = "heapless")]
 impl<'a, const N: usize> TryFrom<OctetStringRef<'a>> for heapless::Vec<u8, N> {
     type Error = Error;

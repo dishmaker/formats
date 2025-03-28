@@ -98,6 +98,8 @@ pub(crate) struct FieldAttrs {
     /// attribute if provided.
     pub class: Option<ClassNum>,
 
+    pub constructed: bool,
+
     /// Indicates name of function that supplies the default value, which will be used in cases
     /// where encoding is omitted per DER and to omit the encoding per DER
     pub default: Option<Path>,
@@ -131,6 +133,7 @@ impl FieldAttrs {
     pub fn parse(attrs: &[Attribute], type_attrs: &TypeAttrs) -> syn::Result<Self> {
         let mut asn1_type = None;
         let mut class = None;
+        let mut constructed = None;
         let mut default = None;
         let mut should_deref = None;
         let mut extensible = None;
@@ -236,6 +239,7 @@ impl FieldAttrs {
         Ok(Self {
             asn1_type,
             class,
+            constructed: constructed.unwrap_or_default(),
             default,
             should_deref: should_deref.unwrap_or_default(),
             extensible: extensible.unwrap_or_default(),
