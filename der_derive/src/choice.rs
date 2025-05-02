@@ -106,17 +106,47 @@ impl DeriveChoice {
 
                 fn decode<R: ::der::Reader<#lifetime>>(reader: &mut R) -> ::core::result::Result<Self, #error> {
                     use der::Reader as _;
-                    match ::der::Tag::peek(reader)? {
+
+                    let tag = ::der::Tag::peek(reader)?;
+                    Ok(Self::decode_choice_by_tag(reader, tag)?)
+
+                    // match  {
+                    //     #(#decode_body)*
+                    //     actual => Err(::der::Error::new(
+                    //         ::der::ErrorKind::TagUnexpected {
+                    //             expected: None,
+                    //             actual
+                    //         },
+                    //         reader.position()
+                    //     ).into()
+                    //     ),
+                    // }
+                }
+            }
+
+            impl #impl_generics #ident #ty_generics #where_clause {
+                fn decode_choice_by_tag<R: ::der::Reader<#lifetime>>(reader: &mut R, tag: ::der::Tag) -> ::core::result::Result<Self, #error> {
+                    match tag {
                         #(#decode_body)*
-                        actual => Err(::der::Error::new(
-                            ::der::ErrorKind::TagUnexpected {
-                                expected: None,
-                                actual
-                            },
-                            reader.position()
-                        ).into()
-                        ),
+                        actual => Err(
+                            ::der::Error::new(
+                                ::der::ErrorKind::TagUnexpected {
+                                    expected: None,
+                                    actual: tag,
+                                },
+                                reader.position()
+                            ).into()
+                        )
                     }
+                }
+            }
+
+            impl #impl_generics ::der::DecodeValue<#lifetime> for #ident #ty_generics #where_clause {
+                type Error = #error;
+
+                fn decode_value<R: ::der::Reader<#lifetime>>(reader: &mut R, header: ::der::Header) -> ::core::result::Result<Self, #error> {
+                    use der::Reader as _;
+                    Ok(Self::decode_choice_by_tag(reader, header.tag)?)
                 }
             }
 
