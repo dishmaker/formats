@@ -1,5 +1,4 @@
 #![feature(test)]
-#![cfg(feature = "alloc")]
 
 extern crate test;
 
@@ -13,7 +12,9 @@ const ED25519_DER_EXAMPLE: &[u8] = include_bytes!("../tests/examples/ed25519-pub
 fn bench_spki_decode(b: &mut Bencher) {
     b.iter(|| {
         let pk_encoded = black_box(ED25519_DER_EXAMPLE);
-        black_box(SubjectPublicKeyInfoRef::try_from(pk_encoded)).unwrap();
+        //for _i in 0..1000000 {
+            black_box(SubjectPublicKeyInfoRef::try_from(pk_encoded)).unwrap();
+        //}
     });
     b.bytes = ED25519_DER_EXAMPLE.len() as u64;
 }

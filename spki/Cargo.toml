@@ -31,6 +31,9 @@ tempfile = "3"
 [features]
 alloc = ["base64ct?/alloc", "der/alloc"]
 std = ["der/std", "alloc"]
+ber = ["der/ber"]
+slow_slice_rdr = ["der/slow_slice_rdr"]
+
 
 arbitrary = ["std", "dep:arbitrary", "der/arbitrary"]
 base64 = ["dep:base64ct"]

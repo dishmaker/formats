@@ -42,6 +42,7 @@ oid = ["dep:const-oid"]
 pem = ["dep:pem-rfc7468", "alloc", "zeroize"]
 real = []
 ber = ["alloc"]
+slow_slice_rdr = []
 
 [package.metadata.docs.rs]
 all-features = true
